@@ -1,0 +1,51 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Fix para que el mapa de Leaflet se muestre correctamente */
+.leaflet-container {
+    width: 100%;
+    height: 100%;
+    z-index: 1;
+}
+
+/* Popups de Leaflet con estilo consistente */
+.leaflet-popup-content-wrapper {
+    border-radius: 8px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+.leaflet-popup-content {
+    margin: 10px 14px;
+    font-size: 13px;
+    line-height: 1.5;
+}
+
+/* Spinner de carga */
+@keyframes spin {
+    to { transform: rotate(360deg); }
+}
+
+.animate-spin {
+    animation: spin 1s linear infinite;
+}
+
+/* Pulso para sesiones en curso */
+@keyframes pulse-dot {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.4; }
+}
+
+.animate-pulse-dot {
+    animation: pulse-dot 1.5s ease-in-out infinite;
+}
+
+/* Estilos para impresión */
+@media print {
+    header, nav, .no-print {
+        display: none !important;
+    }
+    main {
+        overflow: visible !important;
+    }
+}
