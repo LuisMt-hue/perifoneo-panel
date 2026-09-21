@@ -17,8 +17,8 @@ export default function Login() {
     setError(null);
     setLoading(true);
     try {
-      const { token, user } = await login({ email, password });
-      authLogin(token, user);
+      const resp = await login(email, password);
+      authLogin(resp.token, resp.usuario || resp.user);
       navigate('/');
     } catch (err) {
       setError(err.message || 'Error al iniciar sesión');

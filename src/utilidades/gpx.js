@@ -34,3 +34,5 @@ export function descargarGPX(puntos, nombre) {
   document.body.removeChild(a);
   URL.revokeObjectURL(url);
 }
+
+export const exportarGPX = descargarGPX;

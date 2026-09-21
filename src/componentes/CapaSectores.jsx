@@ -1,15 +1,17 @@
 import { GeoJSON, Popup } from 'react-leaflet';
 
 export default function CapaSectores({ sectores = [] }) {
-  if (!sectores || sectores.length === 0) return null;
+  const lista = Array.isArray(sectores) ? sectores : [];
+  if (!lista.length) return null;
 
   return (
     <>
-      {sectores.map((sector) => {
-        if (!sector.geojson) return null;
+      {lista.map((sector) => {
+        const raw = sector.geojson ?? sector.sector_geojson ?? sector.geometry ?? sector.geom;
+        if (!raw) return null;
         let geojsonData;
         try {
-          geojsonData = typeof sector.geojson === 'string' ? JSON.parse(sector.geojson) : sector.geojson;
+          geojsonData = typeof raw === 'string' ? JSON.parse(raw) : raw;
         } catch (e) {
           console.error("Error parsing GeoJSON for sector", sector.id, e);
           return null;

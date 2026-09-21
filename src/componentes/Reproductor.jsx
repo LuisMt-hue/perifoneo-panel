@@ -51,7 +51,7 @@ export default function Reproductor({ puntos = [], onPosicionCambio }) {
     if (!puntos || puntos.length === 0) return;
     
     if (puntos.length === 1) {
-      onPosicionCambio(puntos[0]);
+      onPosicionCambio?.(puntos[0]);
       return;
     }
     
@@ -82,7 +82,7 @@ export default function Reproductor({ puntos = [], onPosicionCambio }) {
       }
     }
     
-    onPosicionCambio(nearest);
+    onPosicionCambio?.(nearest);
   }, [progress, puntos, onPosicionCambio, totalRealTime]);
 
   if (!puntos || puntos.length === 0) return null;

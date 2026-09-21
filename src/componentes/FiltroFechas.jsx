@@ -1,4 +1,12 @@
-export default function FiltroFechas({ desde, hasta, onCambio, children }) {
+export default function FiltroFechas(props) {
+  // Acepta ambas convenciones: desde/hasta/onCambio y fechaInicio/fechaFin/onInicioChange/onFinChange
+  const desde = props.desde ?? props.fechaInicio ?? '';
+  const hasta = props.hasta ?? props.fechaFin ?? '';
+  const onCambio = props.onCambio || ((obj) => {
+    if (props.onInicioChange && obj.desde !== undefined) props.onInicioChange(obj.desde);
+    if (props.onFinChange && obj.hasta !== undefined) props.onFinChange(obj.hasta);
+  });
+  const children = props.children;
   const handleChange = (e) => {
     const { name, value } = e.target;
     onCambio({ desde, hasta, [name]: value });

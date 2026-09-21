@@ -28,10 +28,10 @@ export default function Herramientas() {
 
   const handleRecalcular = () => {
     if (window.confirm('¿Está seguro de recalcular los datos? Esto puede tomar varios minutos.')) {
-      mutRecalcular.mutate({ 
-        inicio: fechaInicio, 
-        fin: fechaFin, 
-        dispositivo_id: dispositivoId || undefined 
+      mutRecalcular.mutate({
+        desde: fechaInicio,
+        hasta: fechaFin,
+        dispositivo: dispositivoId || undefined
       });
     }
   };

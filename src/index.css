@@ -1,6 +1,4 @@
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
+@import "tailwindcss";
 
 /* Fix para que el mapa de Leaflet se muestre correctamente */
 .leaflet-container {

@@ -25,10 +25,10 @@ export default function Perifoneadores() {
     { header: 'DNI', accessorKey: 'dni' },
     { header: 'Placa', accessorKey: 'placa' },
     { header: 'Teléfono', accessorKey: 'telefono' },
-    { 
-      header: 'Sector', 
-      accessorKey: 'sector_nombre',
-      cell: (info) => info.getValue() || (
+    {
+      header: 'Sector',
+      accessorKey: 'sector',
+      cell: (info) => (info.getValue() || info.row.original.sector_nombre) || (
         <span className="flex items-center text-yellow-600 font-semibold text-xs bg-yellow-50 px-2 py-1 rounded-full">
           <AlertTriangle className="w-3 h-3 mr-1" /> Sin sector
         </span>

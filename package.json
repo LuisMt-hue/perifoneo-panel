@@ -19,7 +19,7 @@
   },
   "dependencies": {
     "@tanstack/react-query": "^5.103.1",
-    "@tanstack/react-table": "^9.2.4",
+    "@tanstack/react-table": "^8.21.2",
     "date-fns": "^4.4.0",
     "date-fns-tz": "^3.2.0",
     "jspdf": "^4.2.1",

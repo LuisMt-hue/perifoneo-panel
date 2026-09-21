@@ -6,11 +6,17 @@ import {
 } from '@tanstack/react-table';
 import { useState } from 'react';
 
-export default function TablaDatos({ columnas, datos, cargando, onFilaClic, pieDePagina }) {
+export default function TablaDatos(props) {
+  // Acepta nombres en español (guía) y en inglés (código actual)
+  const columnas = props.columnas || props.columns || [];
+  const datos = props.datos || props.data || [];
+  const cargando = props.cargando ?? props.loading ?? props.isLoading ?? false;
+  const onFilaClic = props.onFilaClic || props.onRowClick;
+  const pieDePagina = props.pieDePagina || props.footer;
   const [sorting, setSorting] = useState([]);
 
   const table = useReactTable({
-    data: datos || [],
+    data: datos,
     columns: columnas,
     state: {
       sorting,

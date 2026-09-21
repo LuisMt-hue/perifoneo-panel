@@ -42,6 +42,8 @@ export function formatearPorcentaje(pct) {
   return `${Math.round(pct)}%`;
 }
 
+export const formatPorcentaje = formatearPorcentaje;
+
 export function fechaParaApi(date) {
   if (!date) return '';
   return formatInTimeZone(date, ZONA_LIMA, 'yyyy-MM-dd');
@@ -49,4 +51,16 @@ export function fechaParaApi(date) {
 
 export function hoy() {
   return formatInTimeZone(new Date(), ZONA_LIMA, 'yyyy-MM-dd');
+}
+
+export function formatearDuracionDesde(fechaISO) {
+  if (!fechaISO) return '-';
+  const diffMs = Date.now() - new Date(fechaISO).getTime();
+  if (Number.isNaN(diffMs)) return '-';
+  const min = Math.max(0, Math.floor(diffMs / 60000));
+  if (min < 1) return 'Ahora';
+  if (min < 60) return `Hace ${min} min`;
+  const h = Math.floor(min / 60);
+  const m = min % 60;
+  return m === 0 ? `Hace ${h}h` : `Hace ${h}h ${m}min`;
 }

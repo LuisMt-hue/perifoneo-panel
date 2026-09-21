@@ -19,9 +19,10 @@ let DefaultIcon = L.icon({
 });
 L.Marker.prototype.options.icon = DefaultIcon;
 
-export default function MapaBase({ children, centro = [-18.0146, -70.2536], zoom = 13, className = '' }) {
+export default function MapaBase({ children, centro, center, zoom = 13, className = '' }) {
+  const posicion = centro || center || [-18.0146, -70.2536];
   return (
-    <MapContainer center={centro} zoom={zoom} className={`w-full h-full ${className}`} style={{ zIndex: 0 }}>
+    <MapContainer center={posicion} zoom={zoom} className={`w-full h-full ${className}`} style={{ zIndex: 0 }}>
       <TileLayer
         url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
         attribution='&copy; OpenStreetMap'

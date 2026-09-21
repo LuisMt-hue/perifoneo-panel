@@ -3,7 +3,7 @@ import { useQuery } from '@tanstack/react-query';
 import { obtenerResumenPerifoneadores, obtenerResumenSectores } from '../api/endpoints';
 import FiltroFechas from '../componentes/FiltroFechas';
 import TablaDatos from '../componentes/TablaDatos';
-import { formatearFecha, formatearDuracion, formatPorcentaje } from '../utilidades/formato';
+import { formatearFecha, formatearDuracion, formatearPorcentaje } from '../utilidades/formato';
 import { exportarExcel } from '../utilidades/excel';
 import { generarInformePDF } from '../utilidades/pdf';
 import { FileText, Download } from 'lucide-react';
@@ -15,12 +15,12 @@ export default function Reportes() {
 
   const { data: resumenPerifoneadores = [], isLoading: loadingP } = useQuery({
     queryKey: ['resumenP', fechaInicio, fechaFin],
-    queryFn: () => obtenerResumenPerifoneadores({ inicio: fechaInicio, fin: fechaFin })
+    queryFn: () => obtenerResumenPerifoneadores({ desde: fechaInicio, hasta: fechaFin })
   });
 
   const { data: resumenSectores = [], isLoading: loadingS } = useQuery({
     queryKey: ['resumenS', fechaInicio, fechaFin],
-    queryFn: () => obtenerResumenSectores({ inicio: fechaInicio, fin: fechaFin })
+    queryFn: () => obtenerResumenSectores({ desde: fechaInicio, hasta: fechaFin })
   });
 
   const columnsP = [
@@ -31,7 +31,7 @@ export default function Reportes() {
     { header: 'Días Activos', accessorKey: 'dias_activos' },
     { header: 'Hrs Totales', accessorKey: 'horas_totales', cell: (info) => formatearDuracion(info.getValue() * 60) },
     { header: 'Hrs Dentro', accessorKey: 'horas_dentro', cell: (info) => formatearDuracion(info.getValue() * 60) },
-    { header: '% Dentro', accessorKey: 'porcentaje_dentro', cell: (info) => formatPorcentaje(info.getValue()) },
+    { header: '% Dentro', accessorKey: 'porcentaje_dentro', cell: (info) => formatearPorcentaje(info.getValue() ?? info.row.original.pct_dentro) },
     { header: 'Hrs Detenido', accessorKey: 'horas_detenido', cell: (info) => formatearDuracion(info.getValue() * 60) },
     { header: 'KM', accessorKey: 'km_total', cell: (info) => Number(info.getValue() || 0).toFixed(2) },
     { header: 'Última Actividad', accessorKey: 'ultima_actividad', cell: (info) => formatearFecha(info.getValue()) },

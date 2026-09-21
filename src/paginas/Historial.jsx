@@ -4,13 +4,14 @@ import { useNavigate } from 'react-router-dom';
 import { obtenerSesiones, obtenerDispositivos, obtenerSectores } from '../api/endpoints';
 import FiltroFechas from '../componentes/FiltroFechas';
 import TablaDatos from '../componentes/TablaDatos';
-import { formatearFecha, formatearHora, formatearDuracion, formatPorcentaje } from '../utilidades/formato';
+import { formatearFecha, formatearHora, formatearDuracion, formatearPorcentaje } from '../utilidades/formato';
 import { exportarExcel } from '../utilidades/excel';
 import { Download } from 'lucide-react';
+import { hoy } from '../utilidades/formato';
 
 export default function Historial() {
-  const [fechaInicio, setFechaInicio] = useState(new Date().toISOString().split('T')[0]);
-  const [fechaFin, setFechaFin] = useState(new Date().toISOString().split('T')[0]);
+  const [fechaInicio, setFechaInicio] = useState(hoy());
+  const [fechaFin, setFechaFin] = useState(hoy());
   const [perifoneador, setPerifoneador] = useState('');
   const [sector, setSector] = useState('');
   const navigate = useNavigate();
@@ -18,35 +19,41 @@ export default function Historial() {
   const { data: dispositivos = [] } = useQuery({ queryKey: ['dispositivos'], queryFn: obtenerDispositivos });
   const { data: sectores = [] } = useQuery({ queryKey: ['sectores'], queryFn: obtenerSectores });
 
-  const { data: sesiones = [], isLoading } = useQuery({
+  const { data: sesionesRaw = [], isLoading } = useQuery({
     queryKey: ['sesiones', fechaInicio, fechaFin, perifoneador, sector],
-    queryFn: () => obtenerSesiones({ inicio: fechaInicio, fin: fechaFin, dispositivo_id: perifoneador, sector_id: sector })
+    queryFn: () => obtenerSesiones({ desde: fechaInicio, hasta: fechaFin, dispositivo: perifoneador || undefined, sector: sector || undefined })
   });
+  const sesiones = Array.isArray(sesionesRaw) ? sesionesRaw : [];
 
   const columns = [
-    { header: 'Fecha', accessorKey: 'fecha', cell: (info) => formatearFecha(info.getValue()) },
-    { header: 'Perifoneador', accessorKey: 'perifoneador_nombre' },
-    { header: 'Sector', accessorKey: 'sector_nombre' },
-    { header: 'Inicio', accessorKey: 'hora_inicio', cell: (info) => formatearHora(info.getValue()) },
-    { 
-      header: 'Fin', 
-      accessorKey: 'hora_fin', 
-      cell: (info) => info.row.original.estado === 'EN_CURSO' ? <span className="flex items-center"><span className="w-2 h-2 rounded-full bg-green-500 animate-pulse mr-2"></span>En curso</span> : formatearHora(info.getValue()) 
+    { header: 'Fecha', accessorKey: 'fecha', cell: (info) => formatearFecha(info.row.original.inicio_at || info.getValue()) },
+    { header: 'Perifoneador', accessorKey: 'perifoneador' },
+    { header: 'Sector', accessorKey: 'sector' },
+    { header: 'Inicio', accessorKey: 'inicio_at', cell: (info) => formatearHora(info.getValue()) },
+    {
+      header: 'Fin',
+      accessorKey: 'fin_at',
+      cell: (info) => info.row.original.estado === 'EN_CURSO' ? <span className="flex items-center"><span className="w-2 h-2 rounded-full bg-green-500 animate-pulse mr-2"></span>En curso</span> : formatearHora(info.getValue())
     },
-    { header: 'Duración', accessorKey: 'duracion_minutos', cell: (info) => formatearDuracion(info.getValue()) },
+    { header: 'Duración', accessorKey: 'minutos_totales', cell: (info) => formatearDuracion(info.getValue()) },
     { header: 'Min Dentro', accessorKey: 'minutos_dentro', cell: (info) => formatearDuracion(info.getValue()) },
     { header: 'Min Fuera', accessorKey: 'minutos_fuera', cell: (info) => formatearDuracion(info.getValue()) },
-    { header: '% Dentro', accessorKey: 'porcentaje_dentro', cell: (info) => formatPorcentaje(info.getValue()) },
+    { header: '% Dentro', accessorKey: 'pct_dentro', cell: (info) => formatearPorcentaje(info.getValue()) },
     { header: 'Detenido', accessorKey: 'minutos_detenido', cell: (info) => formatearDuracion(info.getValue()) },
-    { header: 'KM', accessorKey: 'distancia_km', cell: (info) => Number(info.getValue() || 0).toFixed(2) }
+    { header: 'KM', accessorKey: 'km_totales', cell: (info) => Number(info.getValue() || 0).toFixed(1) }
   ];
+
+  const totales = sesiones.reduce((acc, s) => ({
+    min: acc.min + (s.minutos_totales || 0),
+    km: acc.km + (s.km_totales || 0),
+  }), { min: 0, km: 0 });
 
   const handleExport = () => {
     exportarExcel(sesiones, 'Historial_Recorridos');
   };
 
   const handleRowClick = (row) => {
-    navigate(`/recorrido/${row.original.id}`);
+    navigate(`/recorrido/${row.id}`);
   };
 
   return (
@@ -63,16 +70,16 @@ export default function Historial() {
       </div>
 
       <div className="bg-white p-4 rounded-lg shadow mb-6 flex flex-wrap gap-4 items-end">
-        <FiltroFechas 
-          fechaInicio={fechaInicio} 
-          fechaFin={fechaFin} 
-          onInicioChange={setFechaInicio} 
-          onFinChange={setFechaFin} 
+        <FiltroFechas
+          fechaInicio={fechaInicio}
+          fechaFin={fechaFin}
+          onInicioChange={setFechaInicio}
+          onFinChange={setFechaFin}
         />
         <div>
           <label className="block text-sm font-medium text-gray-700 mb-1">Perifoneador</label>
-          <select 
-            value={perifoneador} 
+          <select
+            value={perifoneador}
             onChange={(e) => setPerifoneador(e.target.value)}
             className="border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
           >
@@ -82,8 +89,8 @@ export default function Historial() {
         </div>
         <div>
           <label className="block text-sm font-medium text-gray-700 mb-1">Sector</label>
-          <select 
-            value={sector} 
+          <select
+            value={sector}
             onChange={(e) => setSector(e.target.value)}
             className="border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
           >
@@ -97,11 +104,16 @@ export default function Historial() {
         {isLoading ? (
           <div className="p-8 text-center text-gray-500">Cargando...</div>
         ) : (
-          <TablaDatos 
-            data={sesiones} 
-            columns={columns} 
-            onRowClick={handleRowClick}
-          />
+          <>
+            <TablaDatos
+              data={sesiones}
+              columns={columns}
+              onRowClick={handleRowClick}
+            />
+            <div className="px-4 py-3 text-sm text-gray-700 bg-gray-50 border-t">
+              {sesiones.length} recorridos · {formatearDuracion(totales.min)} · {totales.km.toFixed(1)} km
+            </div>
+          </>
         )}
       </div>
     </div>

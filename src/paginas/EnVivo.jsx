@@ -3,7 +3,7 @@ import { useQuery } from '@tanstack/react-query';
 import { obtenerEnVivo, obtenerSectores } from '../api/endpoints';
 import MapaBase from '../componentes/MapaBase';
 import CapaSectores from '../componentes/CapaSectores';
-import { MapContainer, Marker, Popup, useMap } from 'react-leaflet';
+import { Marker, Popup, useMap } from 'react-leaflet';
 import L from 'leaflet';
 import { Battery, Clock, Navigation } from 'lucide-react';
 import { formatearFechaHora, formatearDuracionDesde } from '../utilidades/formato';
@@ -32,6 +32,17 @@ const getIcon = (estado) => {
   });
 };
 
+// Normaliza campos API §2.6 (lat/lon/velocidad_kmh/...) con fallbacks legacy
+const norm = (d) => ({
+  ...d,
+  lat: d.lat ?? d.latitud,
+  lon: d.lon ?? d.longitud,
+  velocidad: d.velocidad_kmh ?? d.velocidad ?? 0,
+  bateria: d.bateria_pct ?? d.bateria,
+  hora: d.hora ?? d.ultimo_reporte,
+  sectorNombre: d.sector ?? d.sector_nombre,
+});
+
 export default function EnVivo() {
   const [sectorFilter, setSectorFilter] = useState('');
   const [selectedPosition, setSelectedPosition] = useState(null);
@@ -41,14 +52,16 @@ export default function EnVivo() {
     queryFn: obtenerSectores
   });
 
-  const { data: enVivo = [] } = useQuery({
+  const { data: enVivoRaw = [] } = useQuery({
     queryKey: ['envivo'],
     queryFn: obtenerEnVivo,
     refetchInterval: 30000,
     refetchIntervalInBackground: false
   });
 
-  const filteredData = enVivo.filter(d => !sectorFilter || d.sector_id === parseInt(sectorFilter, 10));
+  const enVivo = (Array.isArray(enVivoRaw) ? enVivoRaw : []).map(norm).filter(d => d.lat != null && d.lon != null);
+
+  const filteredData = enVivo.filter(d => !sectorFilter || String(d.sector_id) === String(sectorFilter));
 
   const sortedData = [...filteredData].sort((a, b) => {
     const order = { 'SIN_SENAL': 1, 'DEMORADO': 2, 'ACTIVO': 3 };
@@ -84,18 +97,18 @@ export default function EnVivo() {
           {sortedData.map(d => (
             <div
               key={d.id}
-              onClick={() => setSelectedPosition([d.latitud, d.longitud])}
+              onClick={() => setSelectedPosition([d.lat, d.lon])}
               className="p-4 border-b border-gray-100 hover:bg-gray-50 cursor-pointer"
             >
               <div className="flex items-center justify-between mb-1">
                 <span className="font-medium text-gray-900 truncate">{d.nombre}</span>
                 <span className={`w-3 h-3 rounded-full ${d.estado === 'ACTIVO' ? 'bg-green-500' : d.estado === 'DEMORADO' ? 'bg-yellow-500' : 'bg-red-500'}`}></span>
               </div>
-              <div className="text-sm text-gray-500">{d.sector_nombre || 'Sin sector'}</div>
+              <div className="text-sm text-gray-500">{d.sectorNombre || 'Sin sector'}</div>
               <div className="flex items-center text-xs text-gray-400 mt-2 space-x-3">
-                <span className="flex items-center"><Clock className="w-3 h-3 mr-1" /> {formatearDuracionDesde(d.ultimo_reporte)}</span>
-                <span className="flex items-center"><Navigation className="w-3 h-3 mr-1" /> {Math.round(d.velocidad)} km/h</span>
-                <span className="flex items-center"><Battery className="w-3 h-3 mr-1" /> {d.bateria}%</span>
+                <span className="flex items-center"><Clock className="w-3 h-3 mr-1" /> {formatearDuracionDesde(d.hora)}</span>
+                <span className="flex items-center"><Navigation className="w-3 h-3 mr-1" /> {Math.round(d.velocidad || 0)} km/h</span>
+                {d.bateria != null && <span className="flex items-center"><Battery className="w-3 h-3 mr-1" /> {d.bateria}%</span>}
               </div>
             </div>
           ))}
@@ -103,19 +116,19 @@ export default function EnVivo() {
       </div>
       <div className="flex-1">
         <MapaBase center={[-18.0146, -70.2536]} zoom={13}>
-          <CapaSectores />
+          <CapaSectores sectores={sectores} />
           {filteredData.map(d => (
-            <Marker key={d.id} position={[d.latitud, d.longitud]} icon={getIcon(d.estado)}>
+            <Marker key={d.id} position={[d.lat, d.lon]} icon={getIcon(d.estado)}>
               <Popup>
                 <div className="p-1">
                   <h3 className="font-bold">{d.nombre}</h3>
                   <div className="text-sm">
                     <p>DNI: {d.dni}</p>
                     <p>Tel: <a href={`tel:${d.telefono}`} className="text-blue-600">{d.telefono}</a></p>
-                    <p>Sector: {d.sector_nombre || 'Ninguno'}</p>
-                    <p>Último: {formatearFechaHora(d.ultimo_reporte)}</p>
-                    <p>Velocidad: {Math.round(d.velocidad)} km/h</p>
-                    <p>Batería: {d.bateria}%</p>
+                    <p>Sector: {d.sectorNombre || 'Ninguno'}</p>
+                    <p>Último: {formatearFechaHora(d.hora)}</p>
+                    <p>Velocidad: {Math.round(d.velocidad || 0)} km/h</p>
+                    {d.bateria != null && <p>Batería: {d.bateria}%</p>}
                   </div>
                 </div>
               </Popup>

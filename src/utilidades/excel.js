@@ -1,20 +1,22 @@
 import * as XLSX from 'xlsx';
 
-export function exportarExcel(columns, data, filename) {
-  const mappedData = data.map(item => {
-    const row = {};
-    columns.forEach(col => {
-      row[col.header] = typeof col.accessorFn === 'function' 
-        ? col.accessorFn(item)
-        : item[col.key];
-    });
-    return row;
-  });
+export function exportarExcel(a, b, c) {
+  // Acepta exportarExcel(datos, nombre) o exportarExcel(columnas, datos, nombre)
+  let datos, filename;
+  if (typeof b === 'string' && c === undefined) {
+    datos = Array.isArray(a) ? a : [];
+    filename = b;
+  } else {
+    datos = Array.isArray(b) ? b : [];
+    filename = c || 'reporte';
+  }
+  if (!datos.length) return;
 
-  const worksheet = XLSX.utils.json_to_sheet(mappedData);
+  const worksheet = XLSX.utils.json_to_sheet(datos);
 
-  const colWidths = columns.map(col => ({
-    wch: Math.max(col.header.length, 10)
+  const primera = datos[0] || {};
+  const colWidths = Object.keys(primera).map((k) => ({
+    wch: Math.max(String(k).length, 12),
   }));
   worksheet['!cols'] = colWidths;
 

@@ -8,7 +8,16 @@ import {
   formatearPorcentaje 
 } from './formato.js';
 
-export function generarInformePDF(persona, sesiones, periodo) {
+export function generarInformePDF(persona, sesionesODesde, periodoOHasta) {
+  // Acepta (persona, sesiones[], {desde,hasta}) o (persona, desde, hasta)
+  let sesiones = [];
+  let periodo = { desde: '', hasta: '' };
+  if (Array.isArray(sesionesODesde)) {
+    sesiones = sesionesODesde;
+    periodo = periodoOHasta || periodo;
+  } else {
+    periodo = { desde: sesionesODesde || '', hasta: periodoOHasta || '' };
+  }
   const doc = new jsPDF();
   
   // Título
@@ -19,29 +28,29 @@ export function generarInformePDF(persona, sesiones, periodo) {
   doc.setFontSize(11);
   doc.text(`Nombre: ${persona.nombre || '-'}`, 14, 32);
   doc.text(`DNI: ${persona.dni || '-'}`, 14, 38);
-  doc.text(`Sector: ${persona.sector || '-'}`, 100, 32);
+  doc.text(`Sector: ${persona.sector || persona.sector_nombre || '-'}`, 100, 32);
   doc.text(`Placa: ${persona.placa || '-'}`, 100, 38);
   
   // Periodo
   doc.text(`Periodo: ${periodo.desde} al ${periodo.hasta}`, 14, 46);
   
-  // Tabla de sesiones
+  // Tabla de sesiones (tolera nombres API §2.6 y nombres legacy)
   const tableData = sesiones.map(s => [
-    formatearFecha(s.inicio),
-    formatearHora(s.inicio),
-    formatearHora(s.fin),
-    formatearDuracion(s.duracion_minutos),
+    formatearFecha(s.inicio_at || s.inicio || s.fecha),
+    formatearHora(s.inicio_at || s.inicio),
+    formatearHora(s.fin_at || s.fin),
+    formatearDuracion(s.minutos_totales ?? s.duracion_minutos),
     s.minutos_dentro ?? '-',
     s.minutos_fuera ?? '-',
-    formatearPorcentaje(s.porcentaje_dentro),
-    formatearKm(s.distancia_km)
+    formatearPorcentaje(s.pct_dentro ?? s.porcentaje_dentro),
+    formatearKm(s.km_totales ?? s.distancia_km)
   ]);
   
   // Totales
-  const totalDuracion = sesiones.reduce((sum, s) => sum + (s.duracion_minutos || 0), 0);
+  const totalDuracion = sesiones.reduce((sum, s) => sum + (s.minutos_totales ?? s.duracion_minutos ?? 0), 0);
   const totalDentro = sesiones.reduce((sum, s) => sum + (s.minutos_dentro || 0), 0);
   const totalFuera = sesiones.reduce((sum, s) => sum + (s.minutos_fuera || 0), 0);
-  const totalKm = sesiones.reduce((sum, s) => sum + (s.distancia_km || 0), 0);
+  const totalKm = sesiones.reduce((sum, s) => sum + (s.km_totales ?? s.distancia_km ?? 0), 0);
   const avgDentro = totalDuracion > 0 ? (totalDentro / totalDuracion) * 100 : 0;
   
   tableData.push([
