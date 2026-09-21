@@ -1,49 +1,175 @@
 @import "tailwindcss";
 
-/* Fix para que el mapa de Leaflet se muestre correctamente */
-.leaflet-container {
-    width: 100%;
-    height: 100%;
-    z-index: 1;
+@custom-variant dark (&:where(.dark, .dark *));
+
+/* Estilo base y fuente del sistema tipo macOS (San Francisco / Inter) */
+:root {
+  font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", "SF Pro Display", "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
 }
 
-/* Popups de Leaflet con estilo consistente */
+/* Barras de desplazamiento sutiles tipo macOS */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: rgba(140, 140, 150, 0.35);
+  border-radius: 9999px;
+  transition: background-color 0.2s ease;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(140, 140, 150, 0.6);
+}
+
+.dark ::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.2);
+}
+
+.dark ::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 255, 255, 0.35);
+}
+
+/* Fix y Estilización del Mapa de Leaflet */
+.leaflet-container {
+  width: 100%;
+  height: 100%;
+  z-index: 1;
+  background-color: #e5e7eb;
+}
+
+.dark .leaflet-container {
+  background-color: #09090b !important;
+}
+
+/* Modo oscuro para los azulejos de OpenStreetMap (100% libre sin API key) */
+.dark .leaflet-tile-pane {
+  filter: invert(100%) hue-rotate(180deg) brightness(95%) contrast(90%);
+}
+
+/* Popups de Leaflet estilo macOS Glassmorphism */
 .leaflet-popup-content-wrapper {
-    border-radius: 8px;
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.95);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.1);
+  border: 1px solid rgba(228, 228, 231, 0.8);
+  color: #18181b;
+  padding: 0;
+}
+
+.dark .leaflet-popup-content-wrapper {
+  background: rgba(24, 24, 27, 0.95) !important;
+  border: 1px solid rgba(63, 63, 70, 0.8) !important;
+  box-shadow: 0 15px 30px -5px rgba(0, 0, 0, 0.5) !important;
+  color: #f4f4f5 !important;
+}
+
+.leaflet-popup-tip {
+  background: rgba(255, 255, 255, 0.95);
+}
+
+.dark .leaflet-popup-tip {
+  background: rgba(24, 24, 27, 0.95) !important;
 }
 
 .leaflet-popup-content {
-    margin: 10px 14px;
-    font-size: 13px;
-    line-height: 1.5;
+  margin: 12px 14px;
+  font-size: 12px;
+  line-height: 1.5;
 }
 
-/* Spinner de carga */
+/* Controles de Zoom de Leaflet estilo macOS */
+.leaflet-bar {
+  border-radius: 10px !important;
+  overflow: hidden;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.12) !important;
+  border: 1px solid rgba(0, 0, 0, 0.1) !important;
+}
+
+.leaflet-bar a {
+  background-color: rgba(255, 255, 255, 0.9) !important;
+  backdrop-filter: blur(8px);
+  color: #27272a !important;
+  border-bottom: 1px solid rgba(0, 0, 0, 0.08) !important;
+  width: 32px !important;
+  height: 32px !important;
+  line-height: 32px !important;
+  transition: all 0.15s ease;
+}
+
+.leaflet-bar a:hover {
+  background-color: #ffffff !important;
+  color: #0284c7 !important;
+}
+
+.dark .leaflet-bar {
+  border: 1px solid rgba(255, 255, 255, 0.15) !important;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.4) !important;
+}
+
+.dark .leaflet-bar a {
+  background-color: rgba(39, 39, 42, 0.9) !important;
+  color: #f4f4f5 !important;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1) !important;
+}
+
+.dark .leaflet-bar a:hover {
+  background-color: #3f3f46 !important;
+  color: #38bdf8 !important;
+}
+
+/* Atribución del mapa */
+.leaflet-control-attribution {
+  background: rgba(255, 255, 255, 0.7) !important;
+  backdrop-filter: blur(4px);
+  font-size: 10px !important;
+  border-radius: 6px 0 0 0;
+  color: #71717a !important;
+}
+
+.dark .leaflet-control-attribution {
+  background: rgba(24, 24, 27, 0.7) !important;
+  color: #a1a1aa !important;
+}
+
+.dark .leaflet-control-attribution a {
+  color: #38bdf8 !important;
+}
+
+/* Animaciones */
 @keyframes spin {
-    to { transform: rotate(360deg); }
+  to { transform: rotate(360deg); }
 }
 
 .animate-spin {
-    animation: spin 1s linear infinite;
+  animation: spin 1s linear infinite;
 }
 
-/* Pulso para sesiones en curso */
 @keyframes pulse-dot {
-    0%, 100% { opacity: 1; }
-    50% { opacity: 0.4; }
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50% { opacity: 0.5; transform: scale(0.9); }
 }
 
 .animate-pulse-dot {
-    animation: pulse-dot 1.5s ease-in-out infinite;
+  animation: pulse-dot 1.8s ease-in-out infinite;
 }
 
-/* Estilos para impresión */
+/* Estilos de Impresión */
 @media print {
-    header, nav, .no-print {
-        display: none !important;
-    }
-    main {
-        overflow: visible !important;
-    }
+  header, nav, .no-print {
+    display: none !important;
+  }
+  main {
+    overflow: visible !important;
+  }
 }
