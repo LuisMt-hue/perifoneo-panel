@@ -4,13 +4,17 @@ import type { TraccarDevice, TraccarPosition, TraccarGeofence } from './types';
  * Cliente de API exclusivo para el módulo Live contra el backend de Traccar.
  */
 
-const TRACCAR_TOKEN: string = (import.meta.env.VITE_TRACCAR_TOKEN as string | undefined) || '';
+const DEFAULT_TRACCAR_TOKEN =
+  'RzBFAiEA3qbpLvWKt4B55qCwmjZ1eD4a52-aKijzGBugs6BI2OwCIEsmKlE7xhY2-wMIrbarNl91OhYe_71TA5AEm9VAMS3QeyJpIjo2OTkxMjg1MjM0MjMxMzAwMjA5LCJ1IjoxLCJlIjoiMjAyNi0wOS0yOVQwNTowMDowMC4wMDArMDA6MDAifQ';
+
+export const TRACCAR_TOKEN: string =
+  (import.meta.env.VITE_TRACCAR_TOKEN as string | undefined) || DEFAULT_TRACCAR_TOKEN;
 
 /**
  * Construye la URL para las peticiones a Traccar incluyendo el token de autenticación.
+ * Utiliza ruta relativa al origen actual para aprovechar el proxy (tanto en Vite dev como en Nginx producción).
  */
-function buildTraccarUrl(endpoint: string): string {
-  // En desarrollo, usamos ruta relativa para aprovechar el proxy configurado en Vite y evitar CORS
+export function buildTraccarUrl(endpoint: string): string {
   const base = endpoint.startsWith('/') ? endpoint : `/${endpoint}`;
   const url = new URL(base, window.location.origin);
   
@@ -23,7 +27,7 @@ function buildTraccarUrl(endpoint: string): string {
 /**
  * Headers estándar para peticiones a Traccar.
  */
-function getTraccarHeaders(): Record<string, string> {
+export function getTraccarHeaders(): Record<string, string> {
   const headers: Record<string, string> = {
     Accept: 'application/json',
   };
@@ -34,15 +38,39 @@ function getTraccarHeaders(): Record<string, string> {
 }
 
 /**
+ * Realiza una petición HTTP a Traccar y valida que la respuesta sea JSON válido.
+ * Si el servidor devuelve HTML (por ejemplo si el proxy no estuviera activo y respondiera index.html),
+ * emite un mensaje descriptivo y claro en lugar de un SyntaxError de JSON inesperado.
+ */
+async function fetchTraccarJson<T>(url: string, init?: RequestInit): Promise<T> {
+  const res = await fetch(url, init);
+
+  if (!res.ok) {
+    let bodySnippet = '';
+    try {
+      bodySnippet = await res.text();
+    } catch {}
+    throw new Error(
+      `Error de Traccar (${res.status} ${res.statusText}): ${bodySnippet.slice(0, 150)}`
+    );
+  }
+
+  const contentType = res.headers.get('content-type') || '';
+  if (!contentType.includes('application/json')) {
+    throw new Error(
+      `Respuesta inesperada de Traccar: se esperaba JSON pero se recibió "${contentType}". Verifica la configuración de proxy de Traccar (/api) en el servidor web.`
+    );
+  }
+
+  return res.json();
+}
+
+/**
  * Verifica el estado de la sesión o usuario con el token configurado.
  */
 export async function obtenerSesionTraccar(): Promise<any> {
   const url = buildTraccarUrl('/api/session');
-  const res = await fetch(url, { headers: getTraccarHeaders() });
-  if (!res.ok) {
-    throw new Error(`Error obteniendo sesión de Traccar: ${res.status} ${res.statusText}`);
-  }
-  return res.json();
+  return fetchTraccarJson(url, { headers: getTraccarHeaders() });
 }
 
 /**
@@ -50,11 +78,7 @@ export async function obtenerSesionTraccar(): Promise<any> {
  */
 export async function obtenerDispositivosTraccar(): Promise<TraccarDevice[]> {
   const url = buildTraccarUrl('/api/devices');
-  const res = await fetch(url, { headers: getTraccarHeaders() });
-  if (!res.ok) {
-    throw new Error(`Error al obtener dispositivos de Traccar: ${res.status} ${res.statusText}`);
-  }
-  return res.json();
+  return fetchTraccarJson<TraccarDevice[]>(url, { headers: getTraccarHeaders() });
 }
 
 /**
@@ -62,11 +86,7 @@ export async function obtenerDispositivosTraccar(): Promise<TraccarDevice[]> {
  */
 export async function obtenerPosicionesTraccar(): Promise<TraccarPosition[]> {
   const url = buildTraccarUrl('/api/positions');
-  const res = await fetch(url, { headers: getTraccarHeaders() });
-  if (!res.ok) {
-    throw new Error(`Error al obtener posiciones de Traccar: ${res.status} ${res.statusText}`);
-  }
-  return res.json();
+  return fetchTraccarJson<TraccarPosition[]>(url, { headers: getTraccarHeaders() });
 }
 
 /**
@@ -74,11 +94,7 @@ export async function obtenerPosicionesTraccar(): Promise<TraccarPosition[]> {
  */
 export async function obtenerGeocercasTraccar(): Promise<TraccarGeofence[]> {
   const url = buildTraccarUrl('/api/geofences');
-  const res = await fetch(url, { headers: getTraccarHeaders() });
-  if (!res.ok) {
-    throw new Error(`Error al obtener geocercas de Traccar: ${res.status} ${res.statusText}`);
-  }
-  return res.json();
+  return fetchTraccarJson<TraccarGeofence[]>(url, { headers: getTraccarHeaders() });
 }
 
 /**
@@ -95,11 +111,7 @@ export async function obtenerRecorridoTraccar(
     to,
   });
   const url = buildTraccarUrl(`/api/reports/route?${params.toString()}`);
-  const res = await fetch(url, { headers: getTraccarHeaders() });
-  if (!res.ok) {
-    throw new Error(`Error al obtener recorrido de Traccar: ${res.status} ${res.statusText}`);
-  }
-  return res.json();
+  return fetchTraccarJson<TraccarPosition[]>(url, { headers: getTraccarHeaders() });
 }
 
 export interface SocketHandlers {

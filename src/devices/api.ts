@@ -1,8 +1,12 @@
 import type { TraccarDevice } from './types';
 
-const TRACCAR_TOKEN: string = (import.meta.env.VITE_TRACCAR_TOKEN as string | undefined) || '';
+const DEFAULT_TRACCAR_TOKEN =
+  'RzBFAiEA3qbpLvWKt4B55qCwmjZ1eD4a52-aKijzGBugs6BI2OwCIEsmKlE7xhY2-wMIrbarNl91OhYe_71TA5AEm9VAMS3QeyJpIjo2OTkxMjg1MjM0MjMxMzAwMjA5LCJ1IjoxLCJlIjoiMjAyNi0wOS0yOVQwNTowMDowMC4wMDArMDA6MDAifQ';
 
-function buildTraccarUrl(endpoint: string): string {
+export const TRACCAR_TOKEN: string =
+  (import.meta.env.VITE_TRACCAR_TOKEN as string | undefined) || DEFAULT_TRACCAR_TOKEN;
+
+export function buildTraccarUrl(endpoint: string): string {
   const base = endpoint.startsWith('/') ? endpoint : `/${endpoint}`;
   const url = new URL(base, window.location.origin);
   if (TRACCAR_TOKEN) {
@@ -11,7 +15,7 @@ function buildTraccarUrl(endpoint: string): string {
   return url.pathname + url.search;
 }
 
-function getTraccarHeaders(): Record<string, string> {
+export function getTraccarHeaders(): Record<string, string> {
   const headers: Record<string, string> = {
     Accept: 'application/json',
     'Content-Type': 'application/json',
@@ -22,16 +26,35 @@ function getTraccarHeaders(): Record<string, string> {
   return headers;
 }
 
+async function fetchTraccarJson<T>(url: string, init?: RequestInit): Promise<T> {
+  const res = await fetch(url, init);
+
+  if (!res.ok) {
+    let bodySnippet = '';
+    try {
+      bodySnippet = await res.text();
+    } catch {}
+    throw new Error(
+      `Error de Traccar (${res.status} ${res.statusText}): ${bodySnippet.slice(0, 150)}`
+    );
+  }
+
+  const contentType = res.headers.get('content-type') || '';
+  if (!contentType.includes('application/json')) {
+    throw new Error(
+      `Respuesta inesperada de Traccar: se esperaba JSON pero se recibió "${contentType}". Verifica que el proxy /api hacia Traccar esté activo en el servidor web.`
+    );
+  }
+
+  return res.json();
+}
+
 /**
  * Obtiene la lista completa de dispositivos registrados en Traccar.
  */
 export async function listarDispositivosTraccar(): Promise<TraccarDevice[]> {
   const url = buildTraccarUrl('/api/devices');
-  const res = await fetch(url, { headers: getTraccarHeaders() });
-  if (!res.ok) {
-    throw new Error(`Error obteniendo dispositivos de Traccar: ${res.status} ${res.statusText}`);
-  }
-  return res.json();
+  return fetchTraccarJson<TraccarDevice[]>(url, { headers: getTraccarHeaders() });
 }
 
 /**
@@ -39,16 +62,11 @@ export async function listarDispositivosTraccar(): Promise<TraccarDevice[]> {
  */
 export async function guardarDispositivoTraccar(device: TraccarDevice): Promise<TraccarDevice> {
   const url = buildTraccarUrl(`/api/devices/${device.id}`);
-  const res = await fetch(url, {
+  return fetchTraccarJson<TraccarDevice>(url, {
     method: 'PUT',
     headers: getTraccarHeaders(),
     body: JSON.stringify(device),
   });
-  if (!res.ok) {
-    const errorBody = await res.text().catch(() => '');
-    throw new Error(`Error al actualizar dispositivo (${res.status}): ${errorBody || res.statusText}`);
-  }
-  return res.json();
 }
 
 /**
@@ -138,16 +156,11 @@ export async function eliminarAtributoEnLote(
  */
 export async function crearDispositivoTraccar(device: Partial<TraccarDevice>): Promise<TraccarDevice> {
   const url = buildTraccarUrl('/api/devices');
-  const res = await fetch(url, {
+  return fetchTraccarJson<TraccarDevice>(url, {
     method: 'POST',
     headers: getTraccarHeaders(),
     body: JSON.stringify(device),
   });
-  if (!res.ok) {
-    const errorBody = await res.text().catch(() => '');
-    throw new Error(`Error al crear dispositivo (${res.status}): ${errorBody || res.statusText}`);
-  }
-  return res.json();
 }
 
 /**
@@ -160,6 +173,10 @@ export async function eliminarDispositivoTraccar(id: number): Promise<void> {
     headers: getTraccarHeaders(),
   });
   if (!res.ok) {
-    throw new Error(`Error al eliminar dispositivo (${res.status}): ${res.statusText}`);
+    let bodySnippet = '';
+    try {
+      bodySnippet = await res.text();
+    } catch {}
+    throw new Error(`Error al eliminar dispositivo (${res.status}): ${bodySnippet || res.statusText}`);
   }
 }

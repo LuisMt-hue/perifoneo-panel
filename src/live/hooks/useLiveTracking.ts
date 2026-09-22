@@ -118,6 +118,28 @@ export function useLiveTracking(): UseLiveTrackingReturn {
     return desconectar;
   }, []);
 
+  // Polling de respaldo automático si el WebSocket no está conectado
+  useEffect(() => {
+    if (socketConectado) return;
+
+    const interval = setInterval(async () => {
+      try {
+        const ultimasPos = await obtenerPosicionesTraccar();
+        setPositionsMap((prev) => {
+          const next = { ...prev };
+          for (const p of ultimasPos) {
+            next[p.deviceId] = p;
+          }
+          return next;
+        });
+      } catch {
+        // Fallback silencioso en segundo plano
+      }
+    }, 15000);
+
+    return () => clearInterval(interval);
+  }, [socketConectado]);
+
   // Fusión y enriquecimiento de dispositivos
   const devices = useMemo(() => {
     return Object.values(devicesMap).map((d) => {
