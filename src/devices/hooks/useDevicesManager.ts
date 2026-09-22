@@ -1,13 +1,21 @@
 import { useState, useEffect, useMemo, useCallback } from 'react';
-import type { TraccarDevice, ManagedDevice, DeviceFilterState, AttributeColumnConfig } from '../types';
+import type {
+  TraccarDevice,
+  ManagedDevice,
+  DeviceFilterState,
+  CreateDevicePayload,
+} from '../types';
 import {
   listarDispositivosTraccar,
+  crearDispositivoTraccar,
   actualizarCampoOAtributo,
   propagarAtributoEnLote,
+  renombrarAtributoEnLote,
   eliminarAtributoEnLote,
   guardarDispositivoTraccar,
   eliminarDispositivoTraccar,
 } from '../api';
+import { useColumnVisibility } from './useColumnVisibility';
 
 export function useDevicesManager() {
   const [devices, setDevices] = useState<ManagedDevice[]>([]);
@@ -22,21 +30,21 @@ export function useDevicesManager() {
     missingAttribute: null,
   });
 
-  // Columnas ocultas por el usuario
-  const [columnasOcultas, setColumnasOcultas] = useState<Set<string>>(new Set(['positionId', 'groupId', 'calendarId', 'expirationTime']));
-
   // Selección de filas
   const [selectedIds, setSelectedIds] = useState<Set<number>>(new Set());
 
   // Estado de edición inline
-  const [editingCell, setEditingCell] = useState<{ deviceId: number; key: string } | null>(null);
   const [savingCell, setSavingCell] = useState<{ deviceId: number; key: string } | null>(null);
   const [successCell, setSuccessCell] = useState<{ deviceId: number; key: string } | null>(null);
 
-  // Modales
-  const [modalAtributoAbierto, setModalAtributoAbierto] = useState<boolean>(false);
+  // Estados de Modales
+  const [modalCrearAbierto, setModalCrearAbierto] = useState<boolean>(false);
+  const [modalColumnasAbierto, setModalColumnasAbierto] = useState<boolean>(false);
+  const [modalAtributosAbierto, setModalAtributosAbierto] = useState<boolean>(false);
   const [modalEdicionMasivaAbierto, setModalEdicionMasivaAbierto] = useState<boolean>(false);
   const [dispositivoParaEditar, setDispositivoParaEditar] = useState<ManagedDevice | null>(null);
+  const [dispositivoParaEliminar, setDispositivoParaEliminar] = useState<ManagedDevice | null>(null);
+  const [eliminandoDispositivo, setEliminandoDispositivo] = useState<boolean>(false);
 
   // Progreso de operaciones masivas
   const [progresoLote, setProgresoLote] = useState<{ actual: number; total: number } | null>(null);
@@ -78,6 +86,12 @@ export function useDevicesManager() {
   // Descubrir todas las claves de atributos presentes en los dispositivos
   const todasLasClavesAtributos = useMemo(() => {
     const set = new Set<string>();
+    // Siempre asegurar que las claves prioritarias estén disponibles
+    set.add('base');
+    set.add('distrito');
+    set.add('placa');
+    set.add('sector');
+
     for (const d of devices) {
       if (d.attributes && typeof d.attributes === 'object') {
         for (const k of Object.keys(d.attributes)) {
@@ -88,49 +102,22 @@ export function useDevicesManager() {
     return Array.from(set).sort();
   }, [devices]);
 
-  // Lista de columnas disponibles (estándar + atributos dinámicos)
-  const columnasDisponibles = useMemo<AttributeColumnConfig[]>(() => {
-    const estandar: AttributeColumnConfig[] = [
-      { key: 'name', label: 'Nombre / Unidad', type: 'standard', visible: !columnasOcultas.has('name') },
-      { key: 'uniqueId', label: 'DNI / Identificador', type: 'standard', visible: !columnasOcultas.has('uniqueId') },
-      { key: 'status', label: 'Estado', type: 'standard', visible: !columnasOcultas.has('status') },
-      { key: 'phone', label: 'Teléfono', type: 'standard', visible: !columnasOcultas.has('phone') },
-      { key: 'contact', label: 'Contacto', type: 'standard', visible: !columnasOcultas.has('contact') },
-      { key: 'category', label: 'Categoría', type: 'standard', visible: !columnasOcultas.has('category') },
-      { key: 'disabled', label: 'Habilitado', type: 'standard', visible: !columnasOcultas.has('disabled') },
-      { key: 'lastUpdate', label: 'Última Act.', type: 'standard', visible: !columnasOcultas.has('lastUpdate') },
-    ];
-
-    const atributosDinamicos: AttributeColumnConfig[] = todasLasClavesAtributos.map((k) => ({
-      key: k,
-      label: k,
-      type: 'attribute',
-      visible: !columnasOcultas.has(k),
-      isCustom: true,
-    }));
-
-    return [...estandar, ...atributosDinamicos];
-  }, [todasLasClavesAtributos, columnasOcultas]);
-
-  // Alternar visibilidad de una columna
-  const toggleVisibilidadColumna = useCallback((colKey: string) => {
-    setColumnasOcultas((prev) => {
-      const next = new Set(prev);
-      if (next.has(colKey)) {
-        next.delete(colKey);
-      } else {
-        next.add(colKey);
-      }
-      return next;
-    });
-  }, []);
+  // Hook modular de visibilidad de columnas
+  const {
+    columnasDisponibles,
+    columnasVisibles,
+    toggleVisibilidadColumna,
+    marcarTodas,
+    desmarcarTodas,
+    restablecerPrioritarias,
+  } = useColumnVisibility(todasLasClavesAtributos);
 
   // Filtrado reactivo de dispositivos
   const dispositivosFiltrados = useMemo(() => {
     const q = filters.search.trim().toLowerCase();
 
     return devices.filter((dev) => {
-      // Filtro de búsqueda omnibox
+      // Filtro de búsqueda omnibox (nombre, DNI, teléfono, contacto, base, distrito, placa, sector, attrs)
       if (q) {
         const matchName = dev.name?.toLowerCase().includes(q);
         const matchUniqueId = dev.uniqueId?.toLowerCase().includes(q);
@@ -163,23 +150,36 @@ export function useDevicesManager() {
     });
   }, [devices, filters]);
 
+  // Helper para obtener valor para ordenar
+  const getSortValue = (device: ManagedDevice, key: string): any => {
+    if (key === 'name') return device.name || '';
+    if (key === 'uniqueId') return device.uniqueId || '';
+    if (key === 'phone') return device.phone || device.attributes?.celular || '';
+    if (key === 'base') return device.attributes?.base || '';
+    if (key === 'distrito') return device.attributes?.distrito || '';
+    if (key === 'placa') return device.attributes?.placa || '';
+    if (key === 'sector') return device.attributes?.sector || '';
+
+    if (device.attributes && key in device.attributes) {
+      return device.attributes[key];
+    }
+    return (device as any)[key] ?? '';
+  };
+
   // Ordenamiento
   const dispositivosOrdenados = useMemo(() => {
     const { key, direction } = sortConfig;
     const factor = direction === 'asc' ? 1 : -1;
 
     return [...dispositivosFiltrados].sort((a, b) => {
-      let valA: any = (a as any)[key];
-      let valB: any = (b as any)[key];
+      const valA = getSortValue(a, key);
+      const valB = getSortValue(b, key);
 
-      if (valA === undefined && a.attributes) valA = a.attributes[key];
-      if (valB === undefined && b.attributes) valB = b.attributes[key];
+      if (valA === null || valA === undefined || valA === '') return 1;
+      if (valB === null || valB === undefined || valB === '') return -1;
 
-      if (valA === null || valA === undefined) return 1;
-      if (valB === null || valB === undefined) return -1;
-
-      if (typeof valA === 'string') {
-        return valA.localeCompare(String(valB)) * factor;
+      if (typeof valA === 'string' && typeof valB === 'string') {
+        return valA.localeCompare(valB) * factor;
       }
       return (valA > valB ? 1 : -1) * factor;
     });
@@ -219,7 +219,19 @@ export function useDevicesManager() {
     setSelectedIds(new Set());
   }, []);
 
-  // Guardado de celda inline
+  // CRUD Dispositivos: Crear nuevo
+  const crearNuevoDispositivo = useCallback(async (payload: CreateDevicePayload) => {
+    const nuevo = await crearDispositivoTraccar(payload);
+    setDevices((prev) => [
+      {
+        ...nuevo,
+        isOnline: nuevo.status === 'online',
+      },
+      ...prev,
+    ]);
+  }, []);
+
+  // Guardado de celda inline (con sanitización estricta para evitar error 400 isOnline)
   const guardarEdicionInline = useCallback(
     async (deviceId: number, key: string, valor: any, isAttribute: boolean) => {
       const dev = devices.find((d) => d.id === deviceId);
@@ -231,10 +243,11 @@ export function useDevicesManager() {
 
         // Actualizar en el estado local de inmediato
         setDevices((prev) =>
-          prev.map((d) => (d.id === deviceId ? { ...actualizado, isOnline: actualizado.status === 'online' } : d))
+          prev.map((d) =>
+            d.id === deviceId ? { ...actualizado, isOnline: actualizado.status === 'online' } : d
+          )
         );
 
-        setEditingCell(null);
         setSuccessCell({ deviceId, key });
         setTimeout(() => setSuccessCell(null), 1500);
       } catch (err: any) {
@@ -247,8 +260,36 @@ export function useDevicesManager() {
     [devices]
   );
 
-  // Agregar o modificar atributo global en masa
-  const agregarAtributoMasivo = useCallback(
+  // Guardar dispositivo completo (desde el modal de edición)
+  const guardarDispositivoCompleto = useCallback(async (dev: TraccarDevice) => {
+    const res = await guardarDispositivoTraccar(dev);
+    setDevices((prev) =>
+      prev.map((d) => (d.id === dev.id ? { ...res, isOnline: res.status === 'online' } : d))
+    );
+  }, []);
+
+  // Eliminar dispositivo
+  const confirmarEliminarDispositivo = useCallback(async (id: number) => {
+    setEliminandoDispositivo(true);
+    try {
+      await eliminarDispositivoTraccar(id);
+      setDevices((prev) => prev.filter((d) => d.id !== id));
+      setSelectedIds((prev) => {
+        const next = new Set(prev);
+        next.delete(id);
+        return next;
+      });
+      setDispositivoParaEliminar(null);
+    } catch (err: any) {
+      console.error('Error al eliminar dispositivo:', err);
+      alert(`Error al eliminar dispositivo: ${err.message}`);
+    } finally {
+      setEliminandoDispositivo(false);
+    }
+  }, []);
+
+  // CRUD Atributos: Crear / Propagar masivo
+  const crearAtributoMasivo = useCallback(
     async (clave: string, valorDefecto: any, alcance: 'all' | 'selected') => {
       const targetIds =
         alcance === 'selected'
@@ -256,7 +297,7 @@ export function useDevicesManager() {
           : devices.map((d) => d.id);
 
       if (targetIds.length === 0) {
-        alert('No hay dispositivos seleccionados');
+        alert('No hay dispositivos seleccionados para propagar el atributo.');
         return;
       }
 
@@ -276,33 +317,48 @@ export function useDevicesManager() {
           prev.map((d) => (actMap.has(d.id) ? { ...actMap.get(d.id)!, isOnline: d.isOnline } : d))
         );
 
-        // Asegurarse de que la nueva columna quede visible
-        setColumnasOcultas((prev) => {
-          const next = new Set(prev);
-          next.delete(clave);
-          return next;
-        });
-
         alert(`Atributo "${clave}" propagado con éxito en ${exitosos} dispositivos.`);
       } catch (err: any) {
         console.error('[useDevicesManager] Error en propagación masiva:', err);
         alert(`Error al propagar atributo: ${err.message}`);
       } finally {
         setProgresoLote(null);
-        setModalAtributoAbierto(false);
       }
     },
     [devices, selectedIds]
   );
 
-  // Eliminar atributo masivo
+  // CRUD Atributos: Renombrar masivo
+  const renombrarAtributoMasivo = useCallback(
+    async (claveActual: string, nuevaClave: string) => {
+      setProgresoLote({ actual: 0, total: devices.length });
+      try {
+        const { exitosos, actualizados } = await renombrarAtributoEnLote(
+          devices,
+          claveActual,
+          nuevaClave,
+          (actual, total) => setProgresoLote({ actual, total })
+        );
+
+        const actMap = new Map(actualizados.map((a) => [a.id, a]));
+        setDevices((prev) =>
+          prev.map((d) => (actMap.has(d.id) ? { ...actMap.get(d.id)!, isOnline: d.isOnline } : d))
+        );
+
+        alert(`Atributo renombrado de "${claveActual}" a "${nuevaClave}" en ${exitosos} dispositivos.`);
+      } catch (err: any) {
+        console.error('[useDevicesManager] Error al renombrar atributo:', err);
+        alert(`Error al renombrar atributo: ${err.message}`);
+      } finally {
+        setProgresoLote(null);
+      }
+    },
+    [devices]
+  );
+
+  // CRUD Atributos: Eliminar masivo
   const eliminarAtributoMasivo = useCallback(
     async (clave: string) => {
-      const confirmacion = window.confirm(
-        `¿Estás seguro de eliminar el atributo "${clave}" de TODOS los dispositivos? Esta acción no se puede deshacer.`
-      );
-      if (!confirmacion) return;
-
       const targetIds = devices.map((d) => d.id);
       setProgresoLote({ actual: 0, total: targetIds.length });
       try {
@@ -321,45 +377,13 @@ export function useDevicesManager() {
         alert(`Atributo "${clave}" eliminado de ${exitosos} dispositivos.`);
       } catch (err: any) {
         console.error('[useDevicesManager] Error al eliminar atributo masivo:', err);
-        alert(`Error: ${err.message}`);
+        alert(`Error al eliminar atributo: ${err.message}`);
       } finally {
         setProgresoLote(null);
       }
     },
     [devices]
   );
-
-  // Guardar dispositivo completo (desde el modal clásico)
-  const guardarDispositivoCompleto = useCallback(async (dev: TraccarDevice) => {
-    try {
-      const res = await guardarDispositivoTraccar(dev);
-      setDevices((prev) =>
-        prev.map((d) => (d.id === dev.id ? { ...res, isOnline: res.status === 'online' } : d))
-      );
-      setDispositivoParaEditar(null);
-    } catch (err: any) {
-      console.error('[useDevicesManager] Error guardando dispositivo completo:', err);
-      alert(`Error al guardar dispositivo: ${err.message}`);
-    }
-  }, []);
-
-  // Eliminar dispositivo
-  const eliminarDispositivo = useCallback(async (id: number) => {
-    const confirmacion = window.confirm('¿Seguro que deseas eliminar este dispositivo de Traccar?');
-    if (!confirmacion) return;
-
-    try {
-      await eliminarDispositivoTraccar(id);
-      setDevices((prev) => prev.filter((d) => d.id !== id));
-      setSelectedIds((prev) => {
-        const next = new Set(prev);
-        next.delete(id);
-        return next;
-      });
-    } catch (err: any) {
-      alert(`Error al eliminar dispositivo: ${err.message}`);
-    }
-  }, []);
 
   return {
     devices,
@@ -371,27 +395,38 @@ export function useDevicesManager() {
     filters,
     setFilters,
     columnasDisponibles,
+    columnasVisibles,
     toggleVisibilidadColumna,
+    marcarTodasColumnas: marcarTodas,
+    desmarcarTodasColumnas: desmarcarTodas,
+    restablecerColumnasPrioritarias: restablecerPrioritarias,
     todasLasClavesAtributos,
     selectedIds,
     toggleSeleccion,
     seleccionarTodosVisibles,
     deseleccionarTodo,
-    editingCell,
-    setEditingCell,
     savingCell,
     successCell,
     guardarEdicionInline,
-    modalAtributoAbierto,
-    setModalAtributoAbierto,
+    modalCrearAbierto,
+    setModalCrearAbierto,
+    modalColumnasAbierto,
+    setModalColumnasAbierto,
+    modalAtributosAbierto,
+    setModalAtributosAbierto,
     modalEdicionMasivaAbierto,
     setModalEdicionMasivaAbierto,
     dispositivoParaEditar,
     setDispositivoParaEditar,
+    dispositivoParaEliminar,
+    setDispositivoParaEliminar,
+    eliminandoDispositivo,
+    crearNuevoDispositivo,
     guardarDispositivoCompleto,
-    agregarAtributoMasivo,
+    confirmarEliminarDispositivo,
+    crearAtributoMasivo,
+    renombrarAtributoMasivo,
     eliminarAtributoMasivo,
-    eliminarDispositivo,
     progresoLote,
     sortConfig,
     setSortConfig,

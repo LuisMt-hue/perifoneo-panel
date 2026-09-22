@@ -406,39 +406,39 @@ export const LiveMap: React.FC<LiveMapProps> = ({
 
       {/* Indicador Flotante Superior del Recorrido en Tiempo Real estilo Traccar */}
       {mostrarRecorrido && (
-        <div className="absolute top-4 left-1/2 -translate-x-1/2 z-20 flex items-center gap-2.5 px-3 py-1.5 rounded-2xl bg-white/92 dark:bg-zinc-900/92 backdrop-blur-xl border border-zinc-200/80 dark:border-zinc-800 shadow-xl text-xs font-semibold animate-in fade-in slide-in-from-top-2 duration-200 pointer-events-auto max-w-[calc(100vw-2rem)]">
+        <div className="absolute top-3 left-1/2 -translate-x-1/2 z-20 flex items-center gap-2.5 px-3 py-1.5 rounded-2xl bg-white/85 dark:bg-zinc-900/85 backdrop-blur-2xl border border-zinc-200/80 dark:border-white/10 shadow-xl text-[12px] font-medium animate-in fade-in slide-in-from-top-2 duration-200 pointer-events-auto max-w-[calc(100vw-2rem)] select-none">
           <div className="flex items-center gap-1.5 shrink-0">
             <span className="w-2 h-2 rounded-full bg-blue-500 animate-pulse" />
-            <span className="text-zinc-800 dark:text-zinc-200 font-bold hidden sm:inline">
+            <span className="text-zinc-800 dark:text-zinc-200 font-semibold hidden sm:inline">
               Recorrido en vivo:
             </span>
           </div>
 
           {selectedDevice ? (
             <div className="flex items-center gap-2 overflow-hidden">
-              <span className="text-zinc-700 dark:text-zinc-300 truncate max-w-[120px] sm:max-w-none">
+              <span className="text-zinc-700 dark:text-zinc-300 font-medium truncate max-w-[120px] sm:max-w-none">
                 {selectedDevice.conductor || selectedDevice.name}
               </span>
-              <span className="text-2xs font-mono font-bold px-1.5 py-0.5 rounded-md bg-blue-50 dark:bg-blue-950/60 text-blue-600 dark:text-blue-400 border border-blue-200/50 dark:border-blue-800/50 shrink-0">
+              <span className="text-[10.5px] font-mono font-medium px-1.5 py-0.5 rounded-md bg-blue-50 dark:bg-blue-950/60 text-blue-600 dark:text-blue-400 border border-blue-200/50 dark:border-blue-800/50 shrink-0 tabular-nums">
                 {distanciaTotalKm.toFixed(1)} km
               </span>
-              <span className="text-3xs text-zinc-400 font-mono hidden md:inline shrink-0">
-                ({rutaDispositivo.length} pts)
+              <span className="text-[10px] text-zinc-400 dark:text-zinc-500 font-mono hidden md:inline shrink-0">
+                · {rutaDispositivo.length} pts
               </span>
               {rutaDispositivo.length > 0 && (
                 <button
                   type="button"
                   onClick={handleAjustarRuta}
                   title="Encuadrar toda la ruta en pantalla"
-                  className="px-2 py-0.5 rounded-lg bg-zinc-100 hover:bg-zinc-200 dark:bg-zinc-800 dark:hover:bg-zinc-700 text-zinc-700 dark:text-zinc-300 text-2xs transition-colors shrink-0"
+                  className="px-2 py-0.5 rounded-lg bg-zinc-100 hover:bg-zinc-200 dark:bg-zinc-800 dark:hover:bg-zinc-700 text-zinc-700 dark:text-zinc-300 text-[10.5px] font-medium transition-colors shrink-0 cursor-pointer"
                 >
                   Encuadrar
                 </button>
               )}
             </div>
           ) : (
-            <span className="text-zinc-500 dark:text-zinc-400 text-2xs truncate">
-              Selecciona un dispositivo en el sidebar para ver su recorrido
+            <span className="text-zinc-500 dark:text-zinc-400 text-[11px] truncate">
+              Selecciona un perifoneador en el panel
             </span>
           )}
 
@@ -448,42 +448,43 @@ export const LiveMap: React.FC<LiveMapProps> = ({
         </div>
       )}
 
-      {/* Controles flotantes en esquina superior derecha estilo Apple */}
-      <div className="absolute top-4 right-4 z-20 flex flex-col gap-2">
+      {/* Paleta flotante de herramientas del mapa estilo macOS */}
+      <div className="absolute top-3 right-3 z-20 flex flex-col gap-1 p-1 rounded-2xl bg-white/85 dark:bg-zinc-900/85 backdrop-blur-2xl border border-zinc-200/80 dark:border-white/10 shadow-xl select-none">
         <button
           type="button"
           onClick={handleAjustarTodos}
           title="Centrar en todos los dispositivos"
-          className="p-2.5 rounded-xl bg-white/85 dark:bg-zinc-900/85 backdrop-blur-md border border-zinc-200/80 dark:border-zinc-800 shadow-md text-zinc-700 dark:text-zinc-200 hover:bg-white dark:hover:bg-zinc-800 hover:scale-105 active:scale-95 transition-all"
+          className="w-8 h-8 rounded-xl flex items-center justify-center text-zinc-700 dark:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-colors cursor-pointer"
         >
-          <Maximize2 size={16} />
+          <Maximize2 size={15} />
         </button>
 
-        {/* Botón de Recorrido en Tiempo Real estilo Traccar */}
+        {/* Botón de Recorrido en Tiempo Real */}
         <button
           type="button"
           onClick={() => setMostrarRecorrido((prev) => !prev)}
-          title={mostrarRecorrido ? 'Ocultar recorrido en tiempo real' : 'Ver recorrido en tiempo real'}
-          className={`p-2.5 rounded-xl backdrop-blur-md border shadow-md transition-all hover:scale-105 active:scale-95 ${
+          title={mostrarRecorrido ? 'Ocultar recorrido' : 'Ver recorrido en tiempo real'}
+          className={`w-8 h-8 rounded-xl flex items-center justify-center transition-colors cursor-pointer ${
             mostrarRecorrido
-              ? 'bg-blue-600 text-white border-blue-600 shadow-blue-500/30 ring-2 ring-blue-400/40'
-              : 'bg-white/85 dark:bg-zinc-900/85 text-zinc-700 dark:text-zinc-200 border-zinc-200/80 dark:border-zinc-800 hover:bg-white dark:hover:bg-zinc-800'
+              ? 'bg-blue-600 text-white shadow-xs'
+              : 'text-zinc-700 dark:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-zinc-800'
           }`}
         >
-          <Route size={16} />
+          <Route size={15} />
         </button>
 
+        {/* Botón de Geocercas */}
         <button
           type="button"
           onClick={() => setMostrarGeocercas((prev) => !prev)}
           title={mostrarGeocercas ? 'Ocultar Geocercas' : 'Mostrar Geocercas'}
-          className={`p-2.5 rounded-xl backdrop-blur-md border shadow-md transition-all hover:scale-105 active:scale-95 ${
+          className={`w-8 h-8 rounded-xl flex items-center justify-center transition-colors cursor-pointer ${
             mostrarGeocercas
-              ? 'bg-blue-600/90 text-white border-blue-600 shadow-blue-500/20'
-              : 'bg-white/85 dark:bg-zinc-900/85 border-zinc-200/80 dark:border-zinc-800 text-zinc-600 dark:text-zinc-400'
+              ? 'bg-blue-600 text-white shadow-xs'
+              : 'text-zinc-700 dark:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-zinc-800'
           }`}
         >
-          <Layers size={16} />
+          <Layers size={15} />
         </button>
       </div>
     </div>

@@ -1,4 +1,5 @@
-import type { TraccarDevice } from './types';
+import type { TraccarDevice, CreateDevicePayload } from './types';
+import { ALLOWED_TRACCAR_DEVICE_KEYS } from './constants';
 
 const DEFAULT_TRACCAR_TOKEN =
   'RzBFAiEA3qbpLvWKt4B55qCwmjZ1eD4a52-aKijzGBugs6BI2OwCIEsmKlE7xhY2-wMIrbarNl91OhYe_71TA5AEm9VAMS3QeyJpIjo2OTkxMjg1MjM0MjMxMzAwMjA5LCJ1IjoxLCJlIjoiMjAyNi0wOS0yOVQwNTowMDowMC4wMDArMDA6MDAifQ';
@@ -26,6 +27,35 @@ export function getTraccarHeaders(): Record<string, string> {
   return headers;
 }
 
+/**
+ * Sanitiza estrictamente un objeto de dispositivo para cumplir con el deserializador Jackson de Traccar.
+ * Elimina 'isOnline' y cualquier otra propiedad ajena que provoque el error 400 Bad Request.
+ */
+export function sanitizeDeviceForTraccar(device: Partial<TraccarDevice>): Record<string, any> {
+  const clean: Record<string, any> = {};
+
+  for (const key of Object.keys(device)) {
+    if (ALLOWED_TRACCAR_DEVICE_KEYS.has(key)) {
+      const val = (device as any)[key];
+      if (val !== undefined) {
+        clean[key] = val;
+      }
+    }
+  }
+
+  // Asegurar que attributes sea un objeto y no contenga llaves con valores undefined
+  const rawAttrs = device.attributes || {};
+  const cleanAttrs: Record<string, any> = {};
+  for (const [k, v] of Object.entries(rawAttrs)) {
+    if (v !== undefined) {
+      cleanAttrs[k] = v;
+    }
+  }
+  clean.attributes = cleanAttrs;
+
+  return clean;
+}
+
 async function fetchTraccarJson<T>(url: string, init?: RequestInit): Promise<T> {
   const res = await fetch(url, init);
 
@@ -35,14 +65,14 @@ async function fetchTraccarJson<T>(url: string, init?: RequestInit): Promise<T> 
       bodySnippet = await res.text();
     } catch {}
     throw new Error(
-      `Error de Traccar (${res.status} ${res.statusText}): ${bodySnippet.slice(0, 150)}`
+      `Error de Traccar (${res.status} ${res.statusText}): ${bodySnippet.slice(0, 200)}`
     );
   }
 
   const contentType = res.headers.get('content-type') || '';
   if (!contentType.includes('application/json')) {
     throw new Error(
-      `Respuesta inesperada de Traccar: se esperaba JSON pero se recibió "${contentType}". Verifica que el proxy /api hacia Traccar esté activo en el servidor web.`
+      `Respuesta inesperada de Traccar: se esperaba JSON pero se recibió "${contentType}". Verifica el proxy /api en el servidor.`
     );
   }
 
@@ -58,19 +88,77 @@ export async function listarDispositivosTraccar(): Promise<TraccarDevice[]> {
 }
 
 /**
- * Actualiza un dispositivo completo en Traccar vía PUT /api/devices/{id}.
+ * Crea un nuevo dispositivo en Traccar (POST /api/devices).
+ * Mapea propiedades estándar y almacena base, distrito, placa, sector en attributes.
  */
-export async function guardarDispositivoTraccar(device: TraccarDevice): Promise<TraccarDevice> {
-  const url = buildTraccarUrl(`/api/devices/${device.id}`);
+export async function crearDispositivoTraccar(payload: CreateDevicePayload): Promise<TraccarDevice> {
+  const attributes: Record<string, any> = { ...(payload.attributes || {}) };
+
+  if (payload.base?.trim()) attributes.base = payload.base.trim();
+  if (payload.distrito?.trim()) attributes.distrito = payload.distrito.trim();
+  if (payload.placa?.trim()) attributes.placa = payload.placa.trim();
+  if (payload.sector?.trim()) attributes.sector = payload.sector.trim();
+
+  const deviceData: Partial<TraccarDevice> = {
+    name: payload.name.trim(),
+    uniqueId: payload.uniqueId.trim(),
+    phone: payload.phone?.trim() || undefined,
+    contact: payload.contact?.trim() || undefined,
+    category: payload.category?.trim() || undefined,
+    disabled: Boolean(payload.disabled),
+    attributes,
+  };
+
+  const cleanPayload = sanitizeDeviceForTraccar(deviceData);
+
+  const url = buildTraccarUrl('/api/devices');
   return fetchTraccarJson<TraccarDevice>(url, {
-    method: 'PUT',
+    method: 'POST',
     headers: getTraccarHeaders(),
-    body: JSON.stringify(device),
+    body: JSON.stringify(cleanPayload),
   });
 }
 
 /**
- * Actualiza una propiedad o un atributo específico de un dispositivo.
+ * Actualiza un dispositivo completo en Traccar vía PUT /api/devices/{id}.
+ * Aplica sanitización estricta para garantizar que Jackson no falle con campos como isOnline.
+ */
+export async function guardarDispositivoTraccar(device: Partial<TraccarDevice>): Promise<TraccarDevice> {
+  if (!device.id) {
+    throw new Error('No se puede actualizar un dispositivo sin ID.');
+  }
+
+  const cleanPayload = sanitizeDeviceForTraccar(device);
+  const url = buildTraccarUrl(`/api/devices/${device.id}`);
+
+  return fetchTraccarJson<TraccarDevice>(url, {
+    method: 'PUT',
+    headers: getTraccarHeaders(),
+    body: JSON.stringify(cleanPayload),
+  });
+}
+
+/**
+ * Elimina un dispositivo en Traccar (DELETE /api/devices/{id}).
+ */
+export async function eliminarDispositivoTraccar(id: number): Promise<void> {
+  const url = buildTraccarUrl(`/api/devices/${id}`);
+  const res = await fetch(url, {
+    method: 'DELETE',
+    headers: getTraccarHeaders(),
+  });
+
+  if (!res.ok) {
+    let bodySnippet = '';
+    try {
+      bodySnippet = await res.text();
+    } catch {}
+    throw new Error(`Error al eliminar dispositivo (${res.status}): ${bodySnippet || res.statusText}`);
+  }
+}
+
+/**
+ * Actualiza una propiedad estándar o un atributo específico de un dispositivo.
  */
 export async function actualizarCampoOAtributo(
   device: TraccarDevice,
@@ -97,8 +185,7 @@ export async function actualizarCampoOAtributo(
 }
 
 /**
- * Agrega o actualiza un atributo de forma masiva en una lista de dispositivos.
- * Ejecuta en lotes concurrentes para máxima velocidad y fiabilidad.
+ * Propaga un atributo masivamente a una lista de dispositivos.
  */
 export async function propagarAtributoEnLote(
   devices: TraccarDevice[],
@@ -114,7 +201,6 @@ export async function propagarAtributoEnLote(
   let fallidos = 0;
   const actualizados: TraccarDevice[] = [];
 
-  // Tamaño de bloque concurrente (5 peticiones en paralelo)
   const CHUNK_SIZE = 5;
 
   for (let i = 0; i < dispositivosAfectados.length; i += CHUNK_SIZE) {
@@ -126,7 +212,63 @@ export async function propagarAtributoEnLote(
           actualizados.push(res);
           exitosos++;
         } catch (err) {
-          console.error(`Error actualizando atributo en dispositivo ${dev.id}:`, err);
+          console.error(`Error actualizando atributo "${attributeKey}" en dispositivo ${dev.id}:`, err);
+          fallidos++;
+        } finally {
+          completados++;
+          onProgress?.(completados, total);
+        }
+      })
+    );
+  }
+
+  return { exitosos, fallidos, actualizados };
+}
+
+/**
+ * Renombra una clave de atributo en todos los dispositivos que la contengan.
+ */
+export async function renombrarAtributoEnLote(
+  devices: TraccarDevice[],
+  oldKey: string,
+  newKey: string,
+  onProgress?: (completados: number, total: number) => void
+): Promise<{ exitosos: number; fallidos: number; actualizados: TraccarDevice[] }> {
+  const cleanNewKey = newKey.trim();
+  if (!cleanNewKey || oldKey === cleanNewKey) {
+    return { exitosos: 0, fallidos: 0, actualizados: [] };
+  }
+
+  const dispositivosAfectados = devices.filter(
+    (d) => d.attributes && oldKey in d.attributes
+  );
+  const total = dispositivosAfectados.length;
+  let completados = 0;
+  let exitosos = 0;
+  let fallidos = 0;
+  const actualizados: TraccarDevice[] = [];
+
+  const CHUNK_SIZE = 5;
+
+  for (let i = 0; i < dispositivosAfectados.length; i += CHUNK_SIZE) {
+    const chunk = dispositivosAfectados.slice(i, i + CHUNK_SIZE);
+    await Promise.all(
+      chunk.map(async (dev) => {
+        try {
+          const valor = dev.attributes?.[oldKey];
+          const currentAttrs = { ...(dev.attributes || {}) };
+          delete currentAttrs[oldKey];
+          currentAttrs[cleanNewKey] = valor;
+
+          const res = await guardarDispositivoTraccar({
+            ...dev,
+            attributes: currentAttrs,
+          });
+
+          actualizados.push(res);
+          exitosos++;
+        } catch (err) {
+          console.error(`Error renombrando atributo "${oldKey}" a "${newKey}" en dispositivo ${dev.id}:`, err);
           fallidos++;
         } finally {
           completados++;
@@ -148,35 +290,42 @@ export async function eliminarAtributoEnLote(
   attributeKey: string,
   onProgress?: (completados: number, total: number) => void
 ): Promise<{ exitosos: number; fallidos: number; actualizados: TraccarDevice[] }> {
-  return propagarAtributoEnLote(devices, targetIds, attributeKey, '', onProgress);
-}
+  const dispositivosAfectados = devices.filter(
+    (d) => targetIds.includes(d.id) && d.attributes && attributeKey in d.attributes
+  );
+  const total = dispositivosAfectados.length;
+  let completados = 0;
+  let exitosos = 0;
+  let fallidos = 0;
+  const actualizados: TraccarDevice[] = [];
 
-/**
- * Crea un nuevo dispositivo en Traccar.
- */
-export async function crearDispositivoTraccar(device: Partial<TraccarDevice>): Promise<TraccarDevice> {
-  const url = buildTraccarUrl('/api/devices');
-  return fetchTraccarJson<TraccarDevice>(url, {
-    method: 'POST',
-    headers: getTraccarHeaders(),
-    body: JSON.stringify(device),
-  });
-}
+  const CHUNK_SIZE = 5;
 
-/**
- * Elimina un dispositivo en Traccar.
- */
-export async function eliminarDispositivoTraccar(id: number): Promise<void> {
-  const url = buildTraccarUrl(`/api/devices/${id}`);
-  const res = await fetch(url, {
-    method: 'DELETE',
-    headers: getTraccarHeaders(),
-  });
-  if (!res.ok) {
-    let bodySnippet = '';
-    try {
-      bodySnippet = await res.text();
-    } catch {}
-    throw new Error(`Error al eliminar dispositivo (${res.status}): ${bodySnippet || res.statusText}`);
+  for (let i = 0; i < dispositivosAfectados.length; i += CHUNK_SIZE) {
+    const chunk = dispositivosAfectados.slice(i, i + CHUNK_SIZE);
+    await Promise.all(
+      chunk.map(async (dev) => {
+        try {
+          const currentAttrs = { ...(dev.attributes || {}) };
+          delete currentAttrs[attributeKey];
+
+          const res = await guardarDispositivoTraccar({
+            ...dev,
+            attributes: currentAttrs,
+          });
+
+          actualizados.push(res);
+          exitosos++;
+        } catch (err) {
+          console.error(`Error eliminando atributo "${attributeKey}" en dispositivo ${dev.id}:`, err);
+          fallidos++;
+        } finally {
+          completados++;
+          onProgress?.(completados, total);
+        }
+      })
+    );
   }
+
+  return { exitosos, fallidos, actualizados };
 }

@@ -46,10 +46,10 @@ export const LiveMapFilters: React.FC<LiveMapFiltersProps> = ({
   }, [devices]);
 
   return (
-    <div className="absolute top-4 z-20 transition-all duration-300 left-4 md:left-[25.5rem]">
-      <div className="flex items-center gap-1.5 p-1.5 rounded-2xl bg-white/92 dark:bg-zinc-900/92 backdrop-blur-xl border border-zinc-200/80 dark:border-zinc-800 shadow-xl max-w-[calc(100vw-2rem)] flex-wrap sm:flex-nowrap">
-        {/* Buscador Integrado */}
-        <div className="relative w-40 sm:w-48 lg:w-56">
+    <div className="absolute top-3 z-20 transition-all duration-300 left-3 md:left-[21.5rem] lg:left-[22.5rem]">
+      <div className="flex items-center gap-1.5 p-1 rounded-2xl bg-white/85 dark:bg-zinc-900/85 backdrop-blur-2xl border border-zinc-200/80 dark:border-white/10 shadow-xl max-w-[calc(100vw-1.5rem)] flex-wrap sm:flex-nowrap">
+        {/* Buscador Integrado (Altura h-8 exacta) */}
+        <div className="relative w-36 sm:w-44 lg:w-52 h-8 flex items-center">
           <Search
             size={13}
             className="absolute left-2.5 top-1/2 -translate-y-1/2 text-zinc-400 pointer-events-none"
@@ -58,33 +58,33 @@ export const LiveMapFilters: React.FC<LiveMapFiltersProps> = ({
             type="text"
             value={filters.busqueda}
             onChange={(e) => setBusqueda(e.target.value)}
-            placeholder="Buscar DNI, chofer..."
-            className="w-full pl-7 pr-6 py-1.5 text-xs bg-zinc-100/80 dark:bg-zinc-800/80 border border-zinc-200/60 dark:border-zinc-700/60 rounded-xl text-zinc-800 dark:text-zinc-200 placeholder-zinc-400 focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all"
+            placeholder="Buscar por chofer o DNI..."
+            className="w-full h-8 pl-7 pr-6 text-[12px] bg-zinc-100/90 dark:bg-zinc-800/80 border border-zinc-200/60 dark:border-white/[0.08] rounded-xl text-zinc-900 dark:text-zinc-100 placeholder-zinc-400 focus:outline-none focus:ring-1 focus:ring-blue-500/50 transition-all"
           />
           {filters.busqueda && (
             <button
               type="button"
               onClick={() => setBusqueda('')}
-              className="absolute right-2 top-1/2 -translate-y-1/2 text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-300"
+              className="absolute right-2 top-1/2 -translate-y-1/2 text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-200 cursor-pointer"
             >
               <X size={12} />
             </button>
           )}
         </div>
 
-        {/* Selector Directo de Zonas / Geocercas Numeradas */}
+        {/* Selector Directo de Zonas / Geocercas (Sin paréntesis) */}
         {geofences.length > 0 && (
-          <div className="relative flex items-center shrink-0">
-            <MapPin size={13} className="absolute left-2.5 text-blue-500 pointer-events-none" />
+          <div className="relative h-8 flex items-center shrink-0">
+            <MapPin size={12} className="absolute left-2.5 text-blue-500 pointer-events-none" />
             <select
               value={filters.geofenceId}
               onChange={(e) => {
                 const val = e.target.value === 'TODOS' ? 'TODOS' : Number(e.target.value);
                 setGeofenceId(val);
               }}
-              className="pl-7 pr-4 py-1.5 text-xs font-medium rounded-xl bg-zinc-100/80 dark:bg-zinc-800/80 border border-zinc-200/60 dark:border-zinc-700/60 text-zinc-800 dark:text-zinc-200 focus:outline-none focus:ring-2 focus:ring-blue-500 cursor-pointer transition-all"
+              className="h-8 pl-7 pr-3 text-[11.5px] font-medium rounded-xl bg-zinc-100/90 dark:bg-zinc-800/80 border border-zinc-200/60 dark:border-white/[0.08] text-zinc-800 dark:text-zinc-200 focus:outline-none focus:ring-1 focus:ring-blue-500/50 cursor-pointer transition-all"
             >
-              <option value="TODOS">Todas las zonas ({geofences.length})</option>
+              <option value="TODOS">Todas las zonas · {geofences.length}</option>
               {geofences.map((g) => (
                 <option key={g.id} value={g.id}>
                   {g.name}
@@ -94,12 +94,12 @@ export const LiveMapFilters: React.FC<LiveMapFiltersProps> = ({
           </div>
         )}
 
-        {/* Selector de Sectores si no hay geocercas o como opción complementaria */}
+        {/* Selector de Sectores si no hay geocercas */}
         {geofences.length === 0 && sectoresDisponibles.length > 0 && (
           <select
             value={filters.sectorFiltro}
             onChange={(e) => setSectorFiltro(e.target.value)}
-            className="px-2.5 py-1.5 text-xs font-medium rounded-xl bg-zinc-100/80 dark:bg-zinc-800/80 border border-zinc-200/60 dark:border-zinc-700/60 text-zinc-800 dark:text-zinc-200 focus:outline-none focus:ring-2 focus:ring-blue-500 cursor-pointer"
+            className="h-8 px-2.5 text-[11.5px] font-medium rounded-xl bg-zinc-100/90 dark:bg-zinc-800/80 border border-zinc-200/60 dark:border-white/[0.08] text-zinc-800 dark:text-zinc-200 focus:outline-none focus:ring-1 focus:ring-blue-500/50 cursor-pointer"
           >
             <option value="TODOS">Todos los sectores</option>
             {sectoresDisponibles.map((s) => (
@@ -110,44 +110,47 @@ export const LiveMapFilters: React.FC<LiveMapFiltersProps> = ({
           </select>
         )}
 
-        {/* Pills de Estado (Todos, Activos, Detenidos, Offline) */}
-        <div className="hidden lg:flex items-center p-0.5 rounded-xl bg-zinc-100/90 dark:bg-zinc-800/90 text-2xs font-medium shrink-0">
+        {/* Segmented Control de Estados (macOS Segment Control) */}
+        <div className="hidden lg:flex items-center h-8 p-0.5 rounded-xl bg-zinc-100/90 dark:bg-zinc-800/80 border border-zinc-200/50 dark:border-white/[0.04] text-[11px] font-medium shrink-0 gap-0.5">
           <button
             type="button"
             onClick={() => setEstadoFiltro('TODOS')}
-            className={`px-2 py-1 rounded-lg transition-all ${
+            className={`h-7 px-2.5 rounded-lg transition-all flex items-center gap-1.5 cursor-pointer ${
               filters.estadoFiltro === 'TODOS'
-                ? 'bg-white dark:bg-zinc-900 text-zinc-900 dark:text-zinc-100 shadow-xs font-bold'
+                ? 'bg-white dark:bg-zinc-900 text-zinc-900 dark:text-zinc-100 shadow-xs font-semibold'
                 : 'text-zinc-500 dark:text-zinc-400 hover:text-zinc-800 dark:hover:text-zinc-200'
             }`}
           >
-            Todos ({counts.visibles})
+            <span>Todos</span>
+            <span className="text-[10px] font-mono px-1.5 py-0.5 rounded-md bg-zinc-200/60 dark:bg-zinc-700/60 text-zinc-700 dark:text-zinc-300 tabular-nums">
+              {counts.visibles}
+            </span>
           </button>
 
           <button
             type="button"
             onClick={() => setEstadoFiltro('ACTIVOS')}
-            className={`flex items-center gap-1 px-2 py-1 rounded-lg transition-all ${
+            className={`h-7 flex items-center gap-1.5 px-2.5 rounded-lg transition-all cursor-pointer ${
               filters.estadoFiltro === 'ACTIVOS'
-                ? 'bg-emerald-500 text-white shadow-xs font-bold'
-                : 'text-emerald-600 dark:text-emerald-400 hover:bg-emerald-50 dark:hover:bg-emerald-950/30'
+                ? 'bg-emerald-500 text-white shadow-xs font-semibold'
+                : 'text-emerald-600 dark:text-emerald-400 hover:bg-emerald-50/80 dark:hover:bg-emerald-950/30'
             }`}
           >
-            <CheckCircle2 size={11} />
-            <span>{counts.activos}</span>
+            <CheckCircle2 size={12} />
+            <span className="font-mono tabular-nums">{counts.activos}</span>
           </button>
 
           <button
             type="button"
             onClick={() => setEstadoFiltro('DETENIDOS')}
-            className={`flex items-center gap-1 px-2 py-1 rounded-lg transition-all ${
+            className={`h-7 flex items-center gap-1.5 px-2.5 rounded-lg transition-all cursor-pointer ${
               filters.estadoFiltro === 'DETENIDOS'
-                ? 'bg-amber-500 text-white shadow-xs font-bold'
-                : 'text-amber-600 dark:text-amber-400 hover:bg-amber-50 dark:hover:bg-amber-950/30'
+                ? 'bg-amber-500 text-white shadow-xs font-semibold'
+                : 'text-amber-600 dark:text-amber-400 hover:bg-amber-50/80 dark:hover:bg-amber-950/30'
             }`}
           >
-            <PauseCircle size={11} />
-            <span>{counts.detenidos}</span>
+            <PauseCircle size={12} />
+            <span className="font-mono tabular-nums">{counts.detenidos}</span>
           </button>
 
           <button
@@ -155,14 +158,14 @@ export const LiveMapFilters: React.FC<LiveMapFiltersProps> = ({
             onClick={() =>
               setEstadoFiltro(filters.estadoFiltro === 'DESCONECTADOS' ? 'TODOS' : 'DESCONECTADOS')
             }
-            className={`flex items-center gap-1 px-2 py-1 rounded-lg transition-all ${
+            className={`h-7 flex items-center gap-1.5 px-2.5 rounded-lg transition-all cursor-pointer ${
               filters.estadoFiltro === 'DESCONECTADOS'
-                ? 'bg-zinc-600 text-white shadow-xs font-bold'
-                : 'text-zinc-500 dark:text-zinc-400 hover:bg-zinc-200/50 dark:hover:bg-zinc-700/50'
+                ? 'bg-zinc-600 text-white shadow-xs font-semibold'
+                : 'text-zinc-500 dark:text-zinc-400 hover:bg-zinc-200/60 dark:hover:bg-zinc-700/50'
             }`}
           >
-            <WifiOff size={11} />
-            <span>{counts.desconectados}</span>
+            <WifiOff size={12} />
+            <span className="font-mono tabular-nums">{counts.desconectados}</span>
           </button>
         </div>
 
@@ -170,28 +173,23 @@ export const LiveMapFilters: React.FC<LiveMapFiltersProps> = ({
         <button
           type="button"
           onClick={() => setOcultarDesconectados((prev) => !prev)}
-          title={
+          className={`hidden sm:flex items-center h-8 gap-1.5 px-2.5 rounded-xl text-[11px] font-medium transition-all border shrink-0 cursor-pointer ${
             filters.ocultarDesconectados
-              ? 'Mostrando solo conectados (Click para ver todos)'
-              : 'Mostrando todos (Click para ocultar desconectados)'
-          }
-          className={`hidden sm:flex items-center gap-1 px-2 py-1.5 rounded-xl text-2xs font-semibold transition-all border shrink-0 ${
-            filters.ocultarDesconectados
-              ? 'bg-blue-50 dark:bg-blue-950/40 text-blue-700 dark:text-blue-300 border-blue-200/60 dark:border-blue-800/60'
-              : 'bg-zinc-100 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-400 border-zinc-200/60 dark:border-zinc-700/60'
+              ? 'bg-blue-500/10 text-blue-700 dark:text-blue-300 border-blue-500/20'
+              : 'bg-zinc-100/90 dark:bg-zinc-800/80 text-zinc-600 dark:text-zinc-400 border-zinc-200/60 dark:border-white/[0.08]'
           }`}
         >
           {filters.ocultarDesconectados ? <EyeOff size={12} /> : <Eye size={12} />}
-          <span>{filters.ocultarDesconectados ? 'Sin offline' : 'Todos'}</span>
+          <span>{filters.ocultarDesconectados ? 'Sin desconectados' : 'Todos'}</span>
         </button>
 
-        {/* Botón de limpiar filtros activos */}
+        {/* Botón Limpiar Filtros */}
         {hayFiltrosActivos && (
           <button
             type="button"
             onClick={limpiarFiltros}
             title="Restablecer filtros"
-            className="flex items-center gap-1 px-2 py-1.5 rounded-xl bg-rose-50 dark:bg-rose-950/40 text-rose-600 dark:text-rose-400 border border-rose-200/60 dark:border-rose-800/60 text-2xs font-semibold hover:bg-rose-100 dark:hover:bg-rose-900/50 transition-all shrink-0"
+            className="flex items-center h-8 gap-1 px-2.5 rounded-xl bg-rose-500/10 hover:bg-rose-500/20 text-rose-600 dark:text-rose-400 border border-rose-500/20 text-[11px] font-medium transition-all shrink-0 cursor-pointer"
           >
             <RotateCcw size={11} />
             <span>Limpiar</span>

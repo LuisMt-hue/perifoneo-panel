@@ -73,7 +73,7 @@ export const DeviceInlineCell: React.FC<DeviceInlineCellProps> = ({
         type="button"
         disabled={isSaving}
         onClick={() => onSave(deviceId, fieldKey, !isChecked, isAttribute)}
-        className={`px-2 py-0.5 rounded-md text-2xs font-semibold font-mono transition-all flex items-center gap-1 ${
+        className={`px-2 py-0.5 rounded-full text-[10.5px] font-medium font-mono transition-all flex items-center gap-1.5 cursor-pointer ${
           isChecked
             ? 'bg-rose-50 dark:bg-rose-950/60 text-rose-600 dark:text-rose-400 border border-rose-200/50 dark:border-rose-800/50'
             : 'bg-emerald-50 dark:bg-emerald-950/60 text-emerald-600 dark:text-emerald-400 border border-emerald-200/50 dark:border-emerald-800/50'
@@ -89,10 +89,10 @@ export const DeviceInlineCell: React.FC<DeviceInlineCellProps> = ({
     );
   }
 
-  // Modo edición activo
+  // Modo edición activo con input refinado tamaño Apple
   if (isEditing) {
     return (
-      <div className="flex items-center gap-1 min-w-[120px]">
+      <div className="flex items-center gap-1 min-w-[130px]">
         <input
           ref={inputRef}
           type="text"
@@ -100,14 +100,14 @@ export const DeviceInlineCell: React.FC<DeviceInlineCellProps> = ({
           onChange={(e) => setCurrentVal(e.target.value)}
           onKeyDown={handleKeyDown}
           onBlur={handleConfirm}
-          className="w-full px-2 py-1 text-xs bg-white dark:bg-zinc-800 border-2 border-blue-500 rounded-lg text-zinc-900 dark:text-zinc-100 focus:outline-none shadow-sm font-mono"
+          className="w-full h-7 px-2 text-[12px] bg-white dark:bg-zinc-800 border-2 border-[#155BD0] rounded-lg text-zinc-900 dark:text-zinc-100 focus:outline-none shadow-xs font-medium"
         />
         <button
           type="button"
           onMouseDown={(e) => e.preventDefault()}
           onClick={handleConfirm}
           title="Guardar (Enter)"
-          className="p-1 rounded-md text-emerald-600 dark:text-emerald-400 hover:bg-emerald-50 dark:hover:bg-emerald-950/50"
+          className="p-1 rounded-md text-emerald-600 dark:text-emerald-400 hover:bg-emerald-50 dark:hover:bg-emerald-950/50 cursor-pointer"
         >
           <Check size={13} />
         </button>
@@ -116,7 +116,7 @@ export const DeviceInlineCell: React.FC<DeviceInlineCellProps> = ({
           onMouseDown={(e) => e.preventDefault()}
           onClick={handleCancel}
           title="Cancelar (Esc)"
-          className="p-1 rounded-md text-zinc-400 hover:bg-zinc-100 dark:hover:bg-zinc-800"
+          className="p-1 rounded-md text-zinc-400 hover:bg-zinc-100 dark:hover:bg-zinc-800 cursor-pointer"
         >
           <X size={13} />
         </button>
@@ -130,18 +130,24 @@ export const DeviceInlineCell: React.FC<DeviceInlineCellProps> = ({
   return (
     <div
       onDoubleClick={() => setIsEditing(true)}
-      className={`group relative flex items-center justify-between gap-1.5 py-1 px-1.5 rounded-lg cursor-pointer transition-all hover:bg-zinc-100/80 dark:hover:bg-zinc-800/60 ${
+      className={`group relative flex items-center justify-between gap-1.5 py-0.5 px-1.5 rounded-lg cursor-pointer transition-all hover:bg-zinc-100/90 dark:hover:bg-zinc-800/80 ${
         isSuccess ? 'bg-emerald-100/70 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-300' : ''
       }`}
-      title="Doble clic para editar rápidamente"
+      title="Doble clic o clic en el lápiz para editar"
     >
-      <span className={`truncate text-xs ${displayVal ? 'text-zinc-800 dark:text-zinc-200 font-medium' : 'text-zinc-400 italic font-normal text-2xs'}`}>
+      <span
+        className={`truncate text-[12px] ${
+          displayVal
+            ? 'text-zinc-800 dark:text-zinc-200 font-normal'
+            : 'text-zinc-400 italic font-normal text-[11px]'
+        }`}
+      >
         {displayVal || placeholder}
       </span>
 
-      <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+      <div className="flex items-center gap-1 opacity-50 sm:opacity-0 group-hover:opacity-100 transition-opacity">
         {isSaving ? (
-          <Loader2 size={12} className="animate-spin text-blue-500 shrink-0" />
+          <Loader2 size={11} className="animate-spin text-[#155BD0] shrink-0" />
         ) : (
           <button
             type="button"
@@ -150,7 +156,7 @@ export const DeviceInlineCell: React.FC<DeviceInlineCellProps> = ({
               setIsEditing(true);
             }}
             title="Editar celda"
-            className="p-0.5 rounded text-zinc-400 hover:text-blue-500"
+            className="p-0.5 rounded-md text-zinc-400 hover:text-[#155BD0] hover:bg-white dark:hover:bg-zinc-700 transition-colors"
           >
             <Edit2 size={11} />
           </button>

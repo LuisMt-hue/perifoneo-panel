@@ -70,10 +70,18 @@ export const LiveMarker: React.FC<LiveMarkerProps> = ({ device, isSelected, onSe
       }}
     >
       <Tooltip direction="top" offset={[0, -12]} opacity={0.95}>
-        <div className="text-xs font-semibold px-1 text-zinc-900 dark:text-zinc-100">
-          <p className="font-bold">{device.name}</p>
-          {device.placa && <p className="text-2xs text-zinc-500 dark:text-zinc-400 font-mono">[{device.placa}]</p>}
-          <p className="text-2xs text-zinc-600 dark:text-zinc-300">{device.velocidadKmh} km/h</p>
+        <div className="text-[12px] font-medium px-1 py-0.5 text-zinc-900 dark:text-zinc-100 flex flex-col gap-0.5">
+          <div className="flex items-center gap-1.5 font-semibold">
+            <span>{device.conductor || device.name}</span>
+            {device.placa && (
+              <span className="text-[9.5px] font-mono px-1 py-0.2 rounded bg-zinc-200/70 dark:bg-zinc-800 text-zinc-700 dark:text-zinc-300">
+                {device.placa}
+              </span>
+            )}
+          </div>
+          <span className="text-[10.5px] text-zinc-500 dark:text-zinc-400 font-mono">
+            {device.velocidadKmh} km/h
+          </span>
         </div>
       </Tooltip>
     </Marker>
