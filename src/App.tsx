@@ -6,12 +6,12 @@ import RutaProtegida from './components/auth/RutaProtegida';
 
 // Importación de Páginas con nombres semánticos
 import LoginPage from './pages/auth/LoginPage';
-import MonitoreoEnVivoPage from './pages/monitoring/MonitoreoEnVivoPage';
+import LivePage from './live/LivePage';
 import HistorialRecorridosPage from './pages/history/HistorialRecorridosPage';
 import DetalleRecorridoPage from './pages/history/DetalleRecorridoPage';
 import ReportesPage from './pages/reports/ReportesPage';
+import DevicesPage from './devices/DevicesPage';
 import GestionUsuariosPage from './pages/admin/GestionUsuariosPage';
-import GestionPerifoneadoresPage from './pages/admin/GestionPerifoneadoresPage';
 import HerramientasAdminPage from './pages/admin/HerramientasAdminPage';
 
 /**
@@ -41,15 +41,17 @@ export const App: React.FC = () => {
       <Route element={<RutaProtegida />}>
         <Route element={<MainLayout />}>
           {/* Vistas operativas y de supervisión */}
-          <Route path="/" element={<MonitoreoEnVivoPage />} />
+          <Route path="/" element={<LivePage />} />
+          <Route path="/devices" element={<DevicesPage />} />
           <Route path="/historial" element={<HistorialRecorridosPage />} />
           <Route path="/recorrido/:id" element={<DetalleRecorridoPage />} />
           <Route path="/reportes" element={<ReportesPage />} />
 
-          {/* Vistas exclusivas de administración (RBAC: Rol ADMIN) */}
+          {/* Vistas de administración (RBAC: Rol ADMIN) */}
           <Route element={<RutaProtegida rol="ADMIN" />}>
             <Route path="/admin/usuarios" element={<GestionUsuariosPage />} />
-            <Route path="/admin/perifoneadores" element={<GestionPerifoneadoresPage />} />
+            <Route path="/admin/dispositivos" element={<DevicesPage />} />
+            <Route path="/admin/perifoneadores" element={<Navigate to="/devices" replace />} />
             <Route path="/admin/herramientas" element={<HerramientasAdminPage />} />
           </Route>
         </Route>

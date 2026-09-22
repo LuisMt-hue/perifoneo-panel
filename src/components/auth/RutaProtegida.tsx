@@ -19,8 +19,9 @@ interface RutaProtegidaProps {
 export const RutaProtegida: React.FC<RutaProtegidaProps> = ({ rol, children }) => {
   const { token, user, isAuthenticated } = useAuth();
 
-  // Si no existe token o la sesión no es válida, redirigir al login
-  if (!isAuthenticated || !token) {
+  // Si existe token de Traccar configurado o sesión activa, permitir acceso
+  const traccarToken = import.meta.env.VITE_TRACCAR_TOKEN;
+  if (!isAuthenticated && !token && !traccarToken) {
     return <Navigate to="/login" replace />;
   }
 

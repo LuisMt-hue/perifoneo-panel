@@ -1,7 +1,6 @@
 import React, { useState } from 'react';
 import { NavLink } from 'react-router-dom';
 import {
-  Radio,
   LogOut,
   Map,
   History,
@@ -17,6 +16,7 @@ import {
   X,
   User,
   Activity,
+  Smartphone,
 } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import { useTheme } from '../../context/ThemeContext';
@@ -85,6 +85,11 @@ export const Header: React.FC = () => {
             <span>En vivo</span>
           </NavLink>
 
+          <NavLink to="/devices" className={getSegmentClass}>
+            <Smartphone size={14} />
+            <span>Dispositivos</span>
+          </NavLink>
+
           <NavLink to="/historial" className={getSegmentClass}>
             <History size={14} />
             <span>Historial</span>
@@ -132,12 +137,12 @@ export const Header: React.FC = () => {
                     <span>Gestión de Usuarios</span>
                   </NavLink>
                   <NavLink
-                    to="/admin/perifoneadores"
+                    to="/devices"
                     onClick={() => setMenuAdminAbierto(false)}
                     className="flex items-center gap-2.5 px-3 py-1.5 text-xs hover:bg-blue-50 dark:hover:bg-zinc-800/80 text-zinc-700 dark:text-zinc-300 hover:text-blue-600 dark:hover:text-blue-400 transition-colors"
                   >
-                    <Radio size={14} />
-                    <span>Perifoneadores</span>
+                    <Smartphone size={14} />
+                    <span>Dispositivos</span>
                   </NavLink>
                   <NavLink
                     to="/admin/herramientas"
@@ -226,6 +231,7 @@ export const Header: React.FC = () => {
 
           <NavLink
             to="/"
+            end
             onClick={() => setMenuMovilAbierto(false)}
             className={({ isActive }) =>
               `flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium transition-colors ${
@@ -234,10 +240,24 @@ export const Header: React.FC = () => {
                   : 'text-zinc-700 dark:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-zinc-800'
               }`
             }
-            end
           >
             <Map size={16} />
             <span>En vivo</span>
+          </NavLink>
+
+          <NavLink
+            to="/devices"
+            onClick={() => setMenuMovilAbierto(false)}
+            className={({ isActive }) =>
+              `flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium transition-colors ${
+                isActive
+                  ? 'bg-blue-600 text-white font-semibold shadow-xs'
+                  : 'text-zinc-700 dark:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-zinc-800'
+              }`
+            }
+          >
+            <Smartphone size={16} />
+            <span>Dispositivos</span>
           </NavLink>
 
           <NavLink
@@ -284,12 +304,12 @@ export const Header: React.FC = () => {
                 <span>Usuarios</span>
               </NavLink>
               <NavLink
-                to="/admin/perifoneadores"
+                to="/devices"
                 onClick={() => setMenuMovilAbierto(false)}
                 className="flex items-center gap-2 px-3 py-2 rounded-lg text-sm text-zinc-700 dark:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-zinc-800"
               >
-                <Radio size={16} />
-                <span>Perifoneadores</span>
+                <Smartphone size={16} />
+                <span>Dispositivos</span>
               </NavLink>
               <NavLink
                 to="/admin/herramientas"

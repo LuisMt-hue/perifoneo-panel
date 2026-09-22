@@ -146,6 +146,55 @@
   color: #38bdf8 !important;
 }
 
+/* Marcadores y etiquetas personalizadas sin marco blanco predeterminado de Leaflet */
+.custom-live-marker,
+.custom-geofence-badge,
+.custom-route-start-marker {
+  background: transparent !important;
+  border: none !important;
+  box-shadow: none !important;
+}
+
+/* Etiqueta tipográfica pura para códigos de zona (sin fondo) con halo cartográfico */
+.zone-code-label {
+  font-family: ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  font-weight: 800;
+  text-transform: uppercase;
+  line-height: 1;
+  white-space: nowrap;
+  pointer-events: none;
+  user-select: none;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  paint-order: stroke fill;
+  -webkit-text-stroke: 3px #ffffff;
+  text-shadow:
+    -1.5px -1.5px 0 #ffffff,
+     1.5px -1.5px 0 #ffffff,
+    -1.5px  1.5px 0 #ffffff,
+     1.5px  1.5px 0 #ffffff,
+     0px   -1.5px 0 #ffffff,
+     0px    1.5px 0 #ffffff,
+    -1.5px  0px   0 #ffffff,
+     1.5px  0px   0 #ffffff,
+     0 1px 3px rgba(0, 0, 0, 0.35);
+}
+
+.dark .zone-code-label {
+  -webkit-text-stroke: 3px #09090b;
+  text-shadow:
+    -1.5px -1.5px 0 #09090b,
+     1.5px -1.5px 0 #09090b,
+    -1.5px  1.5px 0 #09090b,
+     1.5px  1.5px 0 #09090b,
+     0px   -1.5px 0 #09090b,
+     0px    1.5px 0 #09090b,
+    -1.5px  0px   0 #09090b,
+     1.5px  0px   0 #09090b,
+     0 1px 4px rgba(0, 0, 0, 0.85);
+}
+
 /* Animaciones */
 @keyframes spin {
   to { transform: rotate(360deg); }
