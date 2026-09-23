@@ -21,6 +21,7 @@ export interface Usuario {
   activo: boolean;
   /** Identificadores de dispositivos asignados para supervisión (solo supervisores) */
   dispositivos_asignados?: number[];
+  administrator?: boolean;
   created_at?: string;
   updated_at?: string;
 }

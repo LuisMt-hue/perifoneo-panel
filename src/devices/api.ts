@@ -1,8 +1,16 @@
 import type { TraccarDevice, CreateDevicePayload } from './types';
 import { ALLOWED_TRACCAR_DEVICE_KEYS } from './constants';
+import { tokenStorage } from '../services/auth/tokenStorage';
 
 const DEFAULT_TRACCAR_TOKEN =
   'RzBFAiEA3qbpLvWKt4B55qCwmjZ1eD4a52-aKijzGBugs6BI2OwCIEsmKlE7xhY2-wMIrbarNl91OhYe_71TA5AEm9VAMS3QeyJpIjo2OTkxMjg1MjM0MjMxMzAwMjA5LCJ1IjoxLCJlIjoiMjAyNi0wOS0yOVQwNTowMDowMC4wMDArMDA6MDAifQ';
+
+/**
+ * Obtiene el token activo de Traccar, priorizando la sesión del usuario conectado.
+ */
+export function getTraccarToken(): string {
+  return tokenStorage.getToken() || (import.meta.env.VITE_TRACCAR_TOKEN as string | undefined) || DEFAULT_TRACCAR_TOKEN;
+}
 
 export const TRACCAR_TOKEN: string =
   (import.meta.env.VITE_TRACCAR_TOKEN as string | undefined) || DEFAULT_TRACCAR_TOKEN;
@@ -10,8 +18,9 @@ export const TRACCAR_TOKEN: string =
 export function buildTraccarUrl(endpoint: string): string {
   const base = endpoint.startsWith('/') ? endpoint : `/${endpoint}`;
   const url = new URL(base, window.location.origin);
-  if (TRACCAR_TOKEN) {
-    url.searchParams.set('token', TRACCAR_TOKEN);
+  const token = getTraccarToken();
+  if (token) {
+    url.searchParams.set('token', token);
   }
   return url.pathname + url.search;
 }
@@ -21,8 +30,9 @@ export function getTraccarHeaders(): Record<string, string> {
     Accept: 'application/json',
     'Content-Type': 'application/json',
   };
-  if (TRACCAR_TOKEN) {
-    headers['Authorization'] = `Bearer ${TRACCAR_TOKEN}`;
+  const token = getTraccarToken();
+  if (token) {
+    headers['Authorization'] = `Bearer ${token}`;
   }
   return headers;
 }
@@ -57,7 +67,10 @@ export function sanitizeDeviceForTraccar(device: Partial<TraccarDevice>): Record
 }
 
 async function fetchTraccarJson<T>(url: string, init?: RequestInit): Promise<T> {
-  const res = await fetch(url, init);
+  const res = await fetch(url, {
+    credentials: 'include',
+    ...init,
+  });
 
   if (!res.ok) {
     let bodySnippet = '';
@@ -146,6 +159,7 @@ export async function eliminarDispositivoTraccar(id: number): Promise<void> {
   const res = await fetch(url, {
     method: 'DELETE',
     headers: getTraccarHeaders(),
+    credentials: 'include',
   });
 
   if (!res.ok) {

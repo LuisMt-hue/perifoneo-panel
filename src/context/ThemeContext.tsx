@@ -1,6 +1,6 @@
-import React, { createContext, useContext, useEffect, useState } from 'react';
+import React, { createContext, useContext, useEffect } from 'react';
 
-type Theme = 'light' | 'dark' | 'system';
+type Theme = 'light';
 
 interface ThemeContextType {
   theme: Theme;
@@ -13,60 +13,25 @@ const ThemeContext = createContext<ThemeContextType | undefined>(undefined);
 
 const STORAGE_KEY = 'perifoneo-theme';
 
+/**
+ * Proveedor de Tema fijado exclusivamente en Modo Claro.
+ */
 export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const [theme, setThemeState] = useState<Theme>(() => {
-    const saved = localStorage.getItem(STORAGE_KEY) as Theme | null;
-    return saved || 'system';
-  });
-
-  const [isDark, setIsDark] = useState<boolean>(() => {
-    if (typeof window === 'undefined') return false;
-    const saved = localStorage.getItem(STORAGE_KEY);
-    if (saved === 'dark') return true;
-    if (saved === 'light') return false;
-    return window.matchMedia('(prefers-color-scheme: dark)').matches;
-  });
-
   useEffect(() => {
+    // Forzar modo claro permanente en el DOM
     const root = document.documentElement;
-    const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)');
+    root.classList.remove('dark');
+    root.style.colorScheme = 'light';
+    try {
+      localStorage.setItem(STORAGE_KEY, 'light');
+    } catch {}
+  }, []);
 
-    const updateTheme = () => {
-      const activeDark =
-        theme === 'dark' || (theme === 'system' && mediaQuery.matches);
-      setIsDark(activeDark);
-      if (activeDark) {
-        root.classList.add('dark');
-        root.style.colorScheme = 'dark';
-      } else {
-        root.classList.remove('dark');
-        root.style.colorScheme = 'light';
-      }
-    };
-
-    updateTheme();
-
-    const listener = () => {
-      if (theme === 'system') {
-        updateTheme();
-      }
-    };
-
-    mediaQuery.addEventListener('change', listener);
-    return () => mediaQuery.removeEventListener('change', listener);
-  }, [theme]);
-
-  const setTheme = (newTheme: Theme) => {
-    setThemeState(newTheme);
-    localStorage.setItem(STORAGE_KEY, newTheme);
-  };
-
-  const toggleTheme = () => {
-    setTheme(isDark ? 'light' : 'dark');
-  };
+  const setTheme = () => {};
+  const toggleTheme = () => {};
 
   return (
-    <ThemeContext.Provider value={{ theme, isDark, setTheme, toggleTheme }}>
+    <ThemeContext.Provider value={{ theme: 'light', isDark: false, setTheme, toggleTheme }}>
       {children}
     </ThemeContext.Provider>
   );

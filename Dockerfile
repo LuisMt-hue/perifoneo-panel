@@ -18,8 +18,6 @@ RUN --mount=type=cache,target=/root/.npm \
 COPY . .
 
 # Argumentos de construcción consumidos por Vite durante el build
-ARG VITE_API_URL
-ENV VITE_API_URL=$VITE_API_URL
 ARG VITE_TRACCAR_URL
 ENV VITE_TRACCAR_URL=$VITE_TRACCAR_URL
 ARG VITE_TRACCAR_TOKEN

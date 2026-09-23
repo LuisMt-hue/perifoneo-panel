@@ -3,7 +3,6 @@ import type {
   CredencialesLogin,
   RespuestaLogin,
   Usuario,
-  CambiarPasswordDTO,
 } from '../../types/auth.types';
 import type {
   Sector,
@@ -48,38 +47,40 @@ function buildQuery(params: Record<string, unknown> = {}): string {
 }
 
 /* ==========================================================================
-   1. AUTENTICACIÓN Y PERFIL DE USUARIO
+   1. AUTENTICACIÓN Y PERFIL DE USUARIO (TRACCAR BACKEND)
    ========================================================================== */
 
+import { loginTraccar, verificarSesionTraccar } from '../auth/traccarAuth';
+
 /**
- * Autentica un usuario con su correo y contraseña.
- * Admite pasar el objeto `CredencialesLogin` o `email` y `password` por separado.
+ * Autentica un usuario directamente contra el backend de Traccar (/api/session).
  */
-export function login(
+export async function login(
   credencialesOrEmail: CredencialesLogin | string,
   password?: string
 ): Promise<RespuestaLogin> {
-  const cuerpo: CredencialesLogin =
+  const creds: CredencialesLogin =
     typeof credencialesOrEmail === 'object'
       ? credencialesOrEmail
       : { email: credencialesOrEmail, password: password || '' };
 
-  return apiClient.post<RespuestaLogin>('/auth/login', cuerpo);
+  const res = await loginTraccar(creds);
+  return {
+    token: res.token,
+    usuario: res.user,
+    user: res.user,
+  };
 }
 
 /**
- * Obtiene los datos del usuario autenticado actual (`GET /api/auth/yo`).
+ * Obtiene los datos del usuario autenticado actual desde Traccar (`GET /api/session`).
  */
-export function obtenerYo(): Promise<Usuario> {
-  return apiClient.get<Usuario>('/auth/yo');
-}
-
-/**
- * Permite al usuario en sesión actualizar su propia contraseña (`POST /api/auth/cambiar-password`).
- */
-export function cambiarPassword(nueva: string): Promise<MensajeRespuesta> {
-  const dto: CambiarPasswordDTO = { nueva };
-  return apiClient.post<MensajeRespuesta>('/auth/cambiar-password', dto);
+export async function obtenerYo(): Promise<Usuario> {
+  const usuario = await verificarSesionTraccar();
+  if (!usuario) {
+    throw new Error('No hay sesión activa en Traccar.');
+  }
+  return usuario;
 }
 
 /* ==========================================================================

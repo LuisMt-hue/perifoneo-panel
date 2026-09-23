@@ -10,7 +10,7 @@ import Header from './components/Header';
  */
 export const MainLayout: React.FC = () => {
   return (
-    <div className="h-screen flex flex-col bg-zinc-100 dark:bg-zinc-950 text-zinc-900 dark:text-zinc-100 overflow-hidden select-none transition-colors duration-200">
+    <div className="h-screen flex flex-col bg-zinc-100 text-zinc-900 overflow-hidden select-none">
       <Header />
       <main className="flex-1 overflow-hidden relative select-auto">
         <Outlet />

@@ -1,6 +1,7 @@
 import React, { createContext, useContext, useState, useEffect, useMemo } from 'react';
 import type { Usuario, AuthContextType } from '../types/auth.types';
 import { tokenStorage, onSessionExpired } from '../services/auth/tokenStorage';
+import { verificarSesionTraccar, logoutTraccar } from '../services/auth/traccarAuth';
 
 const AuthContext = createContext<AuthContextType | null>(null);
 
@@ -11,18 +12,43 @@ interface AuthProviderProps {
 /**
  * Proveedor Global de Autenticación (`AuthProvider`).
  *
- * Administra el estado de la sesión, sincronizándolo con `tokenStorage`
- * y escuchando eventos de revocación o expiración de tokens JWT.
+ * Administra el estado de la sesión validado contra el backend de Traccar,
+ * sincronizándolo con `tokenStorage` y escuchando expiraciones o cierres de sesión.
  */
 export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
-  // Inicialización limpia: tokenStorage valida la expiración del token al recuperarlo
   const [token, setToken] = useState<string | null>(() => tokenStorage.getToken());
-  const [user, setUser] = useState<Usuario | null>(() => {
-    const validToken = tokenStorage.getToken();
-    return validToken ? tokenStorage.getUser() : null;
-  });
+  const [user, setUser] = useState<Usuario | null>(() => tokenStorage.getUser());
 
-  // Suscribirse al evento de expiración de sesión (ej. emitido por respuesta 401)
+  // Verificar la sesión con el backend de Traccar al montar la aplicación
+  useEffect(() => {
+    let activo = true;
+
+    const comprobarSesion = async () => {
+      // Si hay datos locales o cookies de sesión previas, validar contra Traccar
+      if (tokenStorage.getUser() || tokenStorage.getToken()) {
+        const usuarioTraccar = await verificarSesionTraccar();
+        if (!activo) return;
+
+        if (usuarioTraccar) {
+          setUser(usuarioTraccar);
+          tokenStorage.setUser(usuarioTraccar);
+        } else {
+          // Sesión no válida en Traccar
+          tokenStorage.clear();
+          setToken(null);
+          setUser(null);
+        }
+      }
+    };
+
+    comprobarSesion();
+
+    return () => {
+      activo = false;
+    };
+  }, []);
+
+  // Suscribirse a eventos de expiración de sesión
   useEffect(() => {
     const unsubscribe = onSessionExpired(() => {
       setToken(null);
@@ -38,7 +64,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   };
 
   const logout = () => {
-    tokenStorage.clear();
+    logoutTraccar();
     setToken(null);
     setUser(null);
   };
@@ -47,8 +73,8 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     () => ({
       user,
       token,
-      isAuthenticated: Boolean(token && user),
-      isAdmin: user?.rol === 'ADMIN',
+      isAuthenticated: Boolean(user),
+      isAdmin: user?.rol === 'ADMIN' || Boolean(user?.administrator),
       login,
       logout,
     }),
@@ -70,3 +96,5 @@ export const useAuth = (): AuthContextType => {
   }
   return context;
 };
+
+export default AuthContext;

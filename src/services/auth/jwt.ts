@@ -108,14 +108,32 @@ export function getTokenExpirationDate(token: string | null | undefined): Date |
 export function isTokenExpired(token: string | null | undefined, bufferSegundos = 30): boolean {
   if (!token) return true;
 
+  // 1. Intentar decodificar como JWT RFC 7519 estándar
   const payload = decodeJwt<JwtCustomPayload>(token);
-  if (!payload || typeof payload.exp !== 'number') {
-    // Si no contiene claim exp válido, se considera no confiable
-    return true;
+  if (payload && typeof payload.exp === 'number') {
+    const ahoraEnSegundos = Math.floor(Date.now() / 1000);
+    return payload.exp <= ahoraEnSegundos + bufferSegundos;
   }
 
-  const ahoraEnSegundos = Math.floor(Date.now() / 1000);
-  return payload.exp <= ahoraEnSegundos + bufferSegundos;
+  // 2. Intentar decodificar como token de Traccar con payload base64 embebido (contiene propiedad 'e' con fecha ISO)
+  const eyIndex = token.lastIndexOf('ey');
+  if (eyIndex !== -1) {
+    try {
+      const raw = token.slice(eyIndex);
+      const decoded = JSON.parse(base64UrlDecode(raw));
+      if (decoded && decoded.e) {
+        const expDate = new Date(decoded.e);
+        if (!isNaN(expDate.getTime())) {
+          return expDate.getTime() <= Date.now() + bufferSegundos * 1000;
+        }
+      }
+    } catch {
+      // Ignorar error de parseo y continuar
+    }
+  }
+
+  // Si es un token no vacío sin fecha de expiración explícita, no considerarlo expirado de antemano
+  return false;
 }
 
 /**

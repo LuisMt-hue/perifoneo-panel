@@ -9,9 +9,9 @@ import {
   Map,
 } from 'lucide-react';
 import {
-  obtenerResumenPerifoneadores,
-  obtenerResumenSectores,
-} from '../../services/api/endpoints';
+  obtenerResumenPerifoneadoresTraccar,
+  obtenerResumenSectoresTraccar,
+} from '../../services/api/traccarHistory';
 import FiltroFechas from '../../components/ui/FiltroFechas';
 import TablaDatos from '../../components/ui/TablaDatos';
 import {
@@ -40,16 +40,16 @@ export const ReportesPage: React.FC = () => {
   const [fechaFin, setFechaFin] = useState<string>(hoy());
   const [tab, setTab] = useState<TabTipo>('perifoneadores');
 
-  // Consulta por Perifoneadores
+  // Consulta por Perifoneadores directa a Traccar
   const { data: resumenP = [], isLoading: cargandoP } = useQuery<ResumenPerifoneador[]>({
     queryKey: ['resumenP', fechaInicio, fechaFin],
-    queryFn: () => obtenerResumenPerifoneadores({ desde: fechaInicio, hasta: fechaFin }),
+    queryFn: () => obtenerResumenPerifoneadoresTraccar(fechaInicio, fechaFin),
   });
 
-  // Consulta por Sectores
+  // Consulta por Sectores directa a Traccar
   const { data: resumenS = [], isLoading: cargandoS } = useQuery<ResumenSector[]>({
     queryKey: ['resumenS', fechaInicio, fechaFin],
-    queryFn: () => obtenerResumenSectores({ desde: fechaInicio, hasta: fechaFin }),
+    queryFn: () => obtenerResumenSectoresTraccar(fechaInicio, fechaFin),
   });
 
   // Columnas para la pestaña de Perifoneadores

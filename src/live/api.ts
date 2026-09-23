@@ -1,4 +1,5 @@
 import type { TraccarDevice, TraccarPosition, TraccarGeofence } from './types';
+import { tokenStorage } from '../services/auth/tokenStorage';
 
 /**
  * Cliente de API exclusivo para el módulo Live contra el backend de Traccar.
@@ -6,6 +7,13 @@ import type { TraccarDevice, TraccarPosition, TraccarGeofence } from './types';
 
 const DEFAULT_TRACCAR_TOKEN =
   'RzBFAiEA3qbpLvWKt4B55qCwmjZ1eD4a52-aKijzGBugs6BI2OwCIEsmKlE7xhY2-wMIrbarNl91OhYe_71TA5AEm9VAMS3QeyJpIjo2OTkxMjg1MjM0MjMxMzAwMjA5LCJ1IjoxLCJlIjoiMjAyNi0wOS0yOVQwNTowMDowMC4wMDArMDA6MDAifQ';
+
+/**
+ * Obtiene el token activo de Traccar, priorizando la sesión del usuario conectado.
+ */
+export function getTraccarToken(): string {
+  return tokenStorage.getToken() || (import.meta.env.VITE_TRACCAR_TOKEN as string | undefined) || DEFAULT_TRACCAR_TOKEN;
+}
 
 export const TRACCAR_TOKEN: string =
   (import.meta.env.VITE_TRACCAR_TOKEN as string | undefined) || DEFAULT_TRACCAR_TOKEN;
@@ -17,9 +25,10 @@ export const TRACCAR_TOKEN: string =
 export function buildTraccarUrl(endpoint: string): string {
   const base = endpoint.startsWith('/') ? endpoint : `/${endpoint}`;
   const url = new URL(base, window.location.origin);
-  
-  if (TRACCAR_TOKEN) {
-    url.searchParams.set('token', TRACCAR_TOKEN);
+  const token = getTraccarToken();
+
+  if (token) {
+    url.searchParams.set('token', token);
   }
   return url.pathname + url.search;
 }
@@ -31,8 +40,9 @@ export function getTraccarHeaders(): Record<string, string> {
   const headers: Record<string, string> = {
     Accept: 'application/json',
   };
-  if (TRACCAR_TOKEN) {
-    headers['Authorization'] = `Bearer ${TRACCAR_TOKEN}`;
+  const token = getTraccarToken();
+  if (token) {
+    headers['Authorization'] = `Bearer ${token}`;
   }
   return headers;
 }
@@ -43,7 +53,10 @@ export function getTraccarHeaders(): Record<string, string> {
  * emite un mensaje descriptivo y claro en lugar de un SyntaxError de JSON inesperado.
  */
 async function fetchTraccarJson<T>(url: string, init?: RequestInit): Promise<T> {
-  const res = await fetch(url, init);
+  const res = await fetch(url, {
+    credentials: 'include',
+    ...init,
+  });
 
   if (!res.ok) {
     let bodySnippet = '';
@@ -137,7 +150,8 @@ export function conectarSocketTraccar(handlers: SocketHandlers): () => void {
     try {
       const protocolo = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
       const host = window.location.host;
-      const socketUrl = `${protocolo}//${host}/api/socket${TRACCAR_TOKEN ? `?token=${encodeURIComponent(TRACCAR_TOKEN)}` : ''}`;
+      const token = getTraccarToken();
+      const socketUrl = `${protocolo}//${host}/api/socket${token ? `?token=${encodeURIComponent(token)}` : ''}`;
 
       ws = new WebSocket(socketUrl);
 

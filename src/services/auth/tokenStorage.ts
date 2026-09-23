@@ -132,7 +132,11 @@ export const tokenStorage = {
    * Determina si existe una sesión actualmente válida y no expirada.
    */
   hasValidSession(): boolean {
+    const user = this.getUser();
     const token = this.getToken();
-    return Boolean(token && !isTokenExpired(token));
+    if (token && isTokenExpired(token)) {
+      return false;
+    }
+    return Boolean(user);
   },
 };

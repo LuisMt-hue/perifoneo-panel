@@ -10,8 +10,7 @@ import { tokenStorage, notifySessionExpired } from '../auth/tokenStorage';
  * - Tipado genérico completo `<T>` en todas las operaciones HTTP.
  */
 
-const API_BASE_URL: string =
-  (import.meta.env.VITE_API_URL as string | undefined) || 'http://localhost:3001/api';
+const API_BASE_URL: string = '/api';
 
 /**
  * Error personalizado para peticiones a la API que incluye código de estado HTTP.

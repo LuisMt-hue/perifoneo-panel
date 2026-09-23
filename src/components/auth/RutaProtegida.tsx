@@ -12,21 +12,24 @@ interface RutaProtegidaProps {
 /**
  * Componente Guard de Enrutamiento (`RutaProtegida`).
  *
- * Protege vistas requiriendo autenticación activa. Opcionalmente verifica
- * si el usuario tiene el rol necesario (RBAC). Si el usuario no está autenticado
- * o su token caducó, redirige hacia `/login`.
+ * Protege vistas requiriendo autenticación activa en el backend de Traccar.
+ * Opcionalmente verifica si el usuario tiene el rol necesario (RBAC). Si el usuario
+ * no está autenticado o la sesión expiró, redirige hacia `/login`.
  */
 export const RutaProtegida: React.FC<RutaProtegidaProps> = ({ rol, children }) => {
-  const { token, user, isAuthenticated } = useAuth();
+  const { user, isAuthenticated, isAdmin } = useAuth();
 
-  // Si existe token de Traccar configurado o sesión activa, permitir acceso
-  const traccarToken = import.meta.env.VITE_TRACCAR_TOKEN;
-  if (!isAuthenticated && !token && !traccarToken) {
+  // Requiere sesión activa del usuario autenticado con Traccar
+  if (!isAuthenticated || !user) {
     return <Navigate to="/login" replace />;
   }
 
   // Si se exige un rol específico (ej. ADMIN) y el usuario no lo posee, redirigir a inicio
-  if (rol && user?.rol !== rol) {
+  if (rol === 'ADMIN' && !isAdmin) {
+    return <Navigate to="/" replace />;
+  }
+
+  if (rol && user.rol !== rol && !isAdmin) {
     return <Navigate to="/" replace />;
   }
 

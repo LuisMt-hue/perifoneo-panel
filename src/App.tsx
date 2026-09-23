@@ -11,8 +11,6 @@ import HistorialRecorridosPage from './pages/history/HistorialRecorridosPage';
 import DetalleRecorridoPage from './pages/history/DetalleRecorridoPage';
 import ReportesPage from './pages/reports/ReportesPage';
 import DevicesPage from './devices/DevicesPage';
-import GestionUsuariosPage from './pages/admin/GestionUsuariosPage';
-import HerramientasAdminPage from './pages/admin/HerramientasAdminPage';
 
 /**
  * Componente Guard para la ruta de Login.
@@ -28,8 +26,7 @@ const LoginRoute: React.FC = () => {
  *
  * Estructura la navegación jerárquica:
  * - Rutas públicas: /login
- * - Rutas operativas autenticadas: /, /historial, /recorrido/:id, /reportes
- * - Rutas de administración protegidas por rol ADMIN: /admin/*
+ * - Rutas operativas autenticadas: /, /devices, /historial, /recorrido/:id, /reportes
  */
 export const App: React.FC = () => {
   return (
@@ -47,13 +44,8 @@ export const App: React.FC = () => {
           <Route path="/recorrido/:id" element={<DetalleRecorridoPage />} />
           <Route path="/reportes" element={<ReportesPage />} />
 
-          {/* Vistas de administración (RBAC: Rol ADMIN) */}
-          <Route element={<RutaProtegida rol="ADMIN" />}>
-            <Route path="/admin/usuarios" element={<GestionUsuariosPage />} />
-            <Route path="/admin/dispositivos" element={<DevicesPage />} />
-            <Route path="/admin/perifoneadores" element={<Navigate to="/devices" replace />} />
-            <Route path="/admin/herramientas" element={<HerramientasAdminPage />} />
-          </Route>
+          {/* Rutas obsoletas de admin redirigidas */}
+          <Route path="/admin/*" element={<Navigate to="/" replace />} />
         </Route>
       </Route>
 
