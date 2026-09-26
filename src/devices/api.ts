@@ -1,40 +1,24 @@
 import type { TraccarDevice, CreateDevicePayload } from './types';
 import { ALLOWED_TRACCAR_DEVICE_KEYS } from './constants';
-import { tokenStorage } from '../services/auth/tokenStorage';
-
-const DEFAULT_TRACCAR_TOKEN =
-  'RzBFAiEA3qbpLvWKt4B55qCwmjZ1eD4a52-aKijzGBugs6BI2OwCIEsmKlE7xhY2-wMIrbarNl91OhYe_71TA5AEm9VAMS3QeyJpIjo2OTkxMjg1MjM0MjMxMzAwMjA5LCJ1IjoxLCJlIjoiMjAyNi0wOS0yOVQwNTowMDowMC4wMDArMDA6MDAifQ';
+import {
+  getTraccarToken,
+  buildTraccarUrl,
+  getTraccarHeaders as getBaseTraccarHeaders,
+  fetchTraccarJson,
+} from '../shared/services/traccarClient';
 
 /**
- * Obtiene el token activo de Traccar, priorizando la sesión del usuario conectado.
+ * Constantes de procesamiento para el módulo de dispositivos
  */
-export function getTraccarToken(): string {
-  return tokenStorage.getToken() || (import.meta.env.VITE_TRACCAR_TOKEN as string | undefined) || DEFAULT_TRACCAR_TOKEN;
-}
+export const BATCH_CHUNK_SIZE = 5;
 
-export const TRACCAR_TOKEN: string =
-  (import.meta.env.VITE_TRACCAR_TOKEN as string | undefined) || DEFAULT_TRACCAR_TOKEN;
+export { getTraccarToken, buildTraccarUrl };
 
-export function buildTraccarUrl(endpoint: string): string {
-  const base = endpoint.startsWith('/') ? endpoint : `/${endpoint}`;
-  const url = new URL(base, window.location.origin);
-  const token = getTraccarToken();
-  if (token) {
-    url.searchParams.set('token', token);
-  }
-  return url.pathname + url.search;
-}
-
+/**
+ * Headers específicos para peticiones CRUD de dispositivos (incluye Content-Type application/json)
+ */
 export function getTraccarHeaders(): Record<string, string> {
-  const headers: Record<string, string> = {
-    Accept: 'application/json',
-    'Content-Type': 'application/json',
-  };
-  const token = getTraccarToken();
-  if (token) {
-    headers['Authorization'] = `Bearer ${token}`;
-  }
-  return headers;
+  return getBaseTraccarHeaders({ 'Content-Type': 'application/json' });
 }
 
 /**
@@ -64,32 +48,6 @@ export function sanitizeDeviceForTraccar(device: Partial<TraccarDevice>): Record
   clean.attributes = cleanAttrs;
 
   return clean;
-}
-
-async function fetchTraccarJson<T>(url: string, init?: RequestInit): Promise<T> {
-  const res = await fetch(url, {
-    credentials: 'include',
-    ...init,
-  });
-
-  if (!res.ok) {
-    let bodySnippet = '';
-    try {
-      bodySnippet = await res.text();
-    } catch {}
-    throw new Error(
-      `Error de Traccar (${res.status} ${res.statusText}): ${bodySnippet.slice(0, 200)}`
-    );
-  }
-
-  const contentType = res.headers.get('content-type') || '';
-  if (!contentType.includes('application/json')) {
-    throw new Error(
-      `Respuesta inesperada de Traccar: se esperaba JSON pero se recibió "${contentType}". Verifica el proxy /api en el servidor.`
-    );
-  }
-
-  return res.json();
 }
 
 /**
@@ -215,10 +173,8 @@ export async function propagarAtributoEnLote(
   let fallidos = 0;
   const actualizados: TraccarDevice[] = [];
 
-  const CHUNK_SIZE = 5;
-
-  for (let i = 0; i < dispositivosAfectados.length; i += CHUNK_SIZE) {
-    const chunk = dispositivosAfectados.slice(i, i + CHUNK_SIZE);
+  for (let i = 0; i < dispositivosAfectados.length; i += BATCH_CHUNK_SIZE) {
+    const chunk = dispositivosAfectados.slice(i, i + BATCH_CHUNK_SIZE);
     await Promise.all(
       chunk.map(async (dev) => {
         try {
@@ -262,10 +218,8 @@ export async function renombrarAtributoEnLote(
   let fallidos = 0;
   const actualizados: TraccarDevice[] = [];
 
-  const CHUNK_SIZE = 5;
-
-  for (let i = 0; i < dispositivosAfectados.length; i += CHUNK_SIZE) {
-    const chunk = dispositivosAfectados.slice(i, i + CHUNK_SIZE);
+  for (let i = 0; i < dispositivosAfectados.length; i += BATCH_CHUNK_SIZE) {
+    const chunk = dispositivosAfectados.slice(i, i + BATCH_CHUNK_SIZE);
     await Promise.all(
       chunk.map(async (dev) => {
         try {
@@ -313,10 +267,8 @@ export async function eliminarAtributoEnLote(
   let fallidos = 0;
   const actualizados: TraccarDevice[] = [];
 
-  const CHUNK_SIZE = 5;
-
-  for (let i = 0; i < dispositivosAfectados.length; i += CHUNK_SIZE) {
-    const chunk = dispositivosAfectados.slice(i, i + CHUNK_SIZE);
+  for (let i = 0; i < dispositivosAfectados.length; i += BATCH_CHUNK_SIZE) {
+    const chunk = dispositivosAfectados.slice(i, i + BATCH_CHUNK_SIZE);
     await Promise.all(
       chunk.map(async (dev) => {
         try {

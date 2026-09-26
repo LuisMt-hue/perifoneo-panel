@@ -1,16 +1,16 @@
 import React from 'react';
 import { Routes, Route, Navigate } from 'react-router-dom';
-import { useAuth } from './context/AuthContext';
-import MainLayout from './layouts/MainLayout';
-import RutaProtegida from './components/auth/RutaProtegida';
+import { useAuth } from './shared/context/AuthContext';
+import MainLayout from './shared/components/layout/MainLayout';
+import RutaProtegida from './shared/components/auth/RutaProtegida';
 
-// Importación de Páginas con nombres semánticos
-import LoginPage from './pages/auth/LoginPage';
+// Importación de Páginas por módulos
+import LoginPage from './auth/LoginPage';
 import LivePage from './live/LivePage';
-import HistorialRecorridosPage from './pages/history/HistorialRecorridosPage';
-import DetalleRecorridoPage from './pages/history/DetalleRecorridoPage';
-import ReportesPage from './pages/reports/ReportesPage';
 import DevicesPage from './devices/DevicesPage';
+import HistorialRecorridosPage from './history/HistorialRecorridosPage';
+import DetalleRecorridoPage from './history/DetalleRecorridoPage';
+import ReportesPage from './reports/ReportesPage';
 
 /**
  * Componente Guard para la ruta de Login.

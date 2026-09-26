@@ -339,10 +339,10 @@ export const DeviceEditModal: React.FC<DeviceEditModalProps> = ({
               type="button"
               disabled={saving}
               onClick={() => setDisabled(!disabled)}
-              className={`h-8 px-4 rounded-full text-xs font-bold font-mono transition-all cursor-pointer ${
+              className={`h-8 px-4 rounded-full text-xs font-bold font-mono transition-all cursor-pointer shadow-xs ${
                 disabled
-                  ? 'bg-rose-100 dark:bg-rose-950/60 text-rose-700 dark:text-rose-300 border border-rose-300 dark:border-rose-800'
-                  : 'bg-emerald-100 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-300 border border-emerald-300 dark:border-emerald-800'
+                  ? 'bg-rose-600 hover:bg-rose-700 text-white'
+                  : 'bg-emerald-600 hover:bg-emerald-700 text-white'
               }`}
             >
               {disabled ? 'Deshabilitado' : 'Habilitado'}
@@ -359,7 +359,7 @@ export const DeviceEditModal: React.FC<DeviceEditModalProps> = ({
                 type="button"
                 disabled={saving}
                 onClick={handleAddAttribute}
-                className="h-8 px-3 text-xs font-semibold text-[#155BD0] dark:text-blue-400 bg-blue-50 dark:bg-blue-950/50 hover:bg-blue-100 rounded-xl transition-colors cursor-pointer flex items-center gap-1.5"
+                className="h-8 px-3 text-xs font-semibold text-white bg-blue-600 hover:bg-blue-700 active:bg-blue-800 rounded-xl shadow-xs transition-colors cursor-pointer flex items-center gap-1.5"
               >
                 <Plus size={14} />
                 <span>Añadir Atributo</span>

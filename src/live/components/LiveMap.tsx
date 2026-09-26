@@ -6,10 +6,19 @@ import { Maximize2, Layers, Route, Loader2 } from 'lucide-react';
 import type { LiveDevice, TraccarGeofence } from '../types';
 import { parseTraccarGeofence } from '../utils/geofenceParser';
 import { obtenerRecorridoTraccar } from '../api';
+import { CENTRO_TACNA } from '../../shared/components/map/MapaBase';
 import LiveMarker from './LiveMarker';
 
-// Coordenadas céntricas de Tacna, Perú
-const CENTRO_PREDETERMINADO: [number, number] = [-18.0146, -70.2536];
+/**
+ * Constantes cartográficas y visuales del mapa en vivo
+ */
+export const CENTRO_PREDETERMINADO: [number, number] = CENTRO_TACNA;
+export const DEFAULT_MAP_ZOOM = 13;
+export const MAX_MAP_ZOOM = 19;
+export const LABEL_VISIBILITY_ZOOM_THRESHOLD = 13;
+export const DEFAULT_ZONE_COLOR = '#2563eb';
+export const OSM_TILE_URL = 'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png';
+export const OSM_ATTRIBUTION = '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>';
 
 /**
  * Calcula el centroide de un polígono GeoJSON para posicionar la insignia de la zona.
@@ -270,24 +279,22 @@ export const LiveMap: React.FC<LiveMapProps> = ({
     }
   };
 
-  // Las etiquetas de zonas solo se muestran a partir de zoom 13.
-  // Con -zoom (< 13) dejan de mostrarse para mantener el mapa limpio.
-  // Con +zoom (>= 13) se van apreciando progresivamente mejor, más grandes y nítidas.
-  const mostrarEtiquetasZonas = currentZoom >= 13;
+  // Las etiquetas de zonas solo se muestran a partir del umbral de zoom configurado
+  const mostrarEtiquetasZonas = currentZoom >= LABEL_VISIBILITY_ZOOM_THRESHOLD;
 
   return (
     <div className="relative w-full h-full">
       <MapContainer
         center={CENTRO_PREDETERMINADO}
-        zoom={13}
+        zoom={DEFAULT_MAP_ZOOM}
         className="w-full h-full z-0"
         scrollWheelZoom={true}
         zoomControl={false}
       >
         <TileLayer
-          url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
-          attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
-          maxZoom={19}
+          url={OSM_TILE_URL}
+          attribution={OSM_ATTRIBUTION}
+          maxZoom={MAX_MAP_ZOOM}
         />
 
         <CameraController
@@ -304,7 +311,7 @@ export const LiveMap: React.FC<LiveMapProps> = ({
           geofenceFeatures.map((feat) => {
             if (!feat) return null;
             const rawColor = feat.properties?.color;
-            const color = rawColor && rawColor.toLowerCase() !== '#ffffff' ? rawColor : '#2563eb';
+            const color = rawColor && rawColor.toLowerCase() !== '#ffffff' ? rawColor : DEFAULT_ZONE_COLOR;
             const nombreZona = feat.properties?.name || 'Zona';
             const centro = calcularCentroideGeocerca(feat.geometry.coordinates?.[0]);
 

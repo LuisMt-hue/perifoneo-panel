@@ -3,6 +3,14 @@ import type { TraccarDevice, TraccarPosition, DeviceMetadata, LiveDevice, Estado
 const STORAGE_KEY = 'perifoneo_devices_metadata';
 
 /**
+ * Constantes de conversión y umbrales de estado en vivo
+ */
+export const KNOTS_TO_KMH = 1.852;
+export const ONLINE_THRESHOLD_MINUTES = 10;
+export const ACTIVE_STATUS_THRESHOLD_MINUTES = 15;
+export const MOVEMENT_SPEED_THRESHOLD_KMH = 3;
+
+/**
  * Catálogo inicial de metadatos locales (DNI -> datos complementarios).
  * Si no existen en Traccar, se leen de aquí o de localStorage.
  */
@@ -44,14 +52,14 @@ export function enriquecerDispositivo(
   position: TraccarPosition | undefined,
   metadataMap: Record<string, DeviceMetadata>
 ): LiveDevice {
-  const dni = (device.uniqueId || '').trim();
+  const dni = String(device.uniqueId || '').trim();
   const meta = metadataMap[dni] || {};
   const attrs = device.attributes || {};
   const posAttrs = position?.attributes || {};
 
   // Cálculo de velocidad (Traccar reporta la velocidad en nudos: 1 knot = 1.852 km/h)
   const knots = position?.speed ?? 0;
-  const velocidadKmh = Math.round(knots * 1.852);
+  const velocidadKmh = Math.round(knots * KNOTS_TO_KMH);
 
   // Cálculo de tiempo transcurrido
   const fechaHoraStr = position?.fixTime || device.lastUpdate;
@@ -75,12 +83,12 @@ export function enriquecerDispositivo(
   }
 
   // Estado en línea
-  const enLinea = device.status === 'online' || minutosDesdeReporte <= 10;
-  const enMovimiento = velocidadKmh >= 3;
+  const enLinea = device.status === 'online' || minutosDesdeReporte <= ONLINE_THRESHOLD_MINUTES;
+  const enMovimiento = velocidadKmh >= MOVEMENT_SPEED_THRESHOLD_KMH;
 
   // Estado unificado
   let estado: EstadoDispositivoLive = 'DESCONECTADO';
-  if (enLinea && minutosDesdeReporte <= 15) {
+  if (enLinea && minutosDesdeReporte <= ACTIVE_STATUS_THRESHOLD_MINUTES) {
     estado = enMovimiento ? 'ACTIVO' : 'DETENIDO';
   }
 

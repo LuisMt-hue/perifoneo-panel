@@ -41,7 +41,7 @@ Registrar y auditar de forma confiable el trabajo de perifoneo de campaña, resp
 
 | Componente | Detalle |
 |---|---|
-| VPS | Ubuntu, IP `13.140.40.204`, gestionado con **Dokploy** (panel en el puerto 3000) |
+| VPS | Ubuntu, IP `<IP_VPS>`, gestionado con **Dokploy** (panel en el puerto 3000) |
 | Traccar Server | Contenedor Docker, puerto **8082**, con MySQL (`mysql:lts`) |
 | Traccar Client | App oficial de Play Store instalada en celulares de prueba |
 | Pruebas de campo | Recorridos registrados sin cortes, ~4.5 km, con el celular en movimiento |

@@ -75,7 +75,7 @@ Estas decisiones ya fueron tomadas y el código las respeta. No deben cambiarse 
 
 | Componente | Estado |
 |---|---|
-| VPS con Dokploy (`13.140.40.204`, panel en `:3000`) | ✅ Funcionando |
+| VPS con Dokploy (`<IP_VPS>`, panel en `:3000`) | ✅ Funcionando |
 | Traccar Server + MySQL (`:8082`) | ✅ Funcionando |
 | Traccar Client en celulares de prueba | ✅ Registrando recorridos sin cortes |
 | Geocercas (sectores) dibujadas | ✅ En progreso |
@@ -202,7 +202,7 @@ Y una limitación de MySQL: la función `ST_Buffer` no trabaja con coordenadas g
 
 Reúne todo esto antes del Paso 1:
 
-- [ ] Acceso a Dokploy (`http://13.140.40.204:3000`)
+- [ ] Acceso a Dokploy (`http://<IP_VPS>:3000`)
 - [ ] Acceso SSH al VPS
 - [ ] Email y contraseña del **administrador de Traccar**
 - [ ] Cuenta de GitHub
@@ -373,7 +373,7 @@ Para el `JWT_SECRET`, genera una cadena aleatoria desde SSH y pega el resultado:
 openssl rand -hex 32
 ```
 
-Si `TRACCAR_URL` con el nombre del contenedor no conecta, usa la dirección pública: `http://13.140.40.204:8082`. Funciona igual.
+Si `TRACCAR_URL` con el nombre del contenedor no conecta, usa la dirección pública: `http://<IP_VPS>:8082`. Funciona igual.
 
 `CORS_ORIGENES=*` es solo para pruebas. Cuando el panel tenga dominio, se reemplaza por ese dominio exacto.
 
@@ -421,7 +421,7 @@ Desde tu computadora o SSH:
 **Salud del servicio (no requiere login):**
 
 ```bash
-curl http://13.140.40.204:3001/api/salud
+curl http://<IP_VPS>:3001/api/salud
 ```
 
 ```json
@@ -432,7 +432,7 @@ curl http://13.140.40.204:3001/api/salud
 **Login:**
 
 ```bash
-curl -X POST http://13.140.40.204:3001/api/auth/login \
+curl -X POST http://<IP_VPS>:3001/api/auth/login \
   -H "Content-Type: application/json" \
   -d '{"email":"tu@correo.pe","password":"TuClaveSegura123"}'
 ```
@@ -442,7 +442,7 @@ Copia el valor de `token` de la respuesta.
 **Consultar recorridos:**
 
 ```bash
-curl http://13.140.40.204:3001/api/sesiones \
+curl http://<IP_VPS>:3001/api/sesiones \
   -H "Authorization: Bearer EL_TOKEN_COPIADO"
 ```
 
@@ -463,11 +463,11 @@ La API reimporta sectores y dispositivos cada hora. Para aplicarlo al momento, y
 
 ```bash
 # Reimportar ahora
-curl -X POST http://13.140.40.204:3001/api/admin/importar \
+curl -X POST http://<IP_VPS>:3001/api/admin/importar \
   -H "Authorization: Bearer TOKEN"
 
 # Reprocesar un rango de fechas con los sectores nuevos
-curl -X POST http://13.140.40.204:3001/api/admin/recalcular \
+curl -X POST http://<IP_VPS>:3001/api/admin/recalcular \
   -H "Authorization: Bearer TOKEN" -H "Content-Type: application/json" \
   -d '{"desde":"2026-09-01","hasta":"2026-09-30"}'
 ```

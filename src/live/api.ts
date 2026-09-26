@@ -1,82 +1,17 @@
 import type { TraccarDevice, TraccarPosition, TraccarGeofence } from './types';
-import { tokenStorage } from '../services/auth/tokenStorage';
+import {
+  getTraccarToken,
+  buildTraccarUrl,
+  getTraccarHeaders,
+  fetchTraccarJson,
+} from '../shared/services/traccarClient';
 
 /**
- * Cliente de API exclusivo para el módulo Live contra el backend de Traccar.
+ * Constantes de conexión y reintento para el módulo Live
  */
+export const WS_RECONNECT_DELAY_MS = 5000;
 
-const DEFAULT_TRACCAR_TOKEN =
-  'RzBFAiEA3qbpLvWKt4B55qCwmjZ1eD4a52-aKijzGBugs6BI2OwCIEsmKlE7xhY2-wMIrbarNl91OhYe_71TA5AEm9VAMS3QeyJpIjo2OTkxMjg1MjM0MjMxMzAwMjA5LCJ1IjoxLCJlIjoiMjAyNi0wOS0yOVQwNTowMDowMC4wMDArMDA6MDAifQ';
-
-/**
- * Obtiene el token activo de Traccar, priorizando la sesión del usuario conectado.
- */
-export function getTraccarToken(): string {
-  return tokenStorage.getToken() || (import.meta.env.VITE_TRACCAR_TOKEN as string | undefined) || DEFAULT_TRACCAR_TOKEN;
-}
-
-export const TRACCAR_TOKEN: string =
-  (import.meta.env.VITE_TRACCAR_TOKEN as string | undefined) || DEFAULT_TRACCAR_TOKEN;
-
-/**
- * Construye la URL para las peticiones a Traccar incluyendo el token de autenticación.
- * Utiliza ruta relativa al origen actual para aprovechar el proxy (tanto en Vite dev como en Nginx producción).
- */
-export function buildTraccarUrl(endpoint: string): string {
-  const base = endpoint.startsWith('/') ? endpoint : `/${endpoint}`;
-  const url = new URL(base, window.location.origin);
-  const token = getTraccarToken();
-
-  if (token) {
-    url.searchParams.set('token', token);
-  }
-  return url.pathname + url.search;
-}
-
-/**
- * Headers estándar para peticiones a Traccar.
- */
-export function getTraccarHeaders(): Record<string, string> {
-  const headers: Record<string, string> = {
-    Accept: 'application/json',
-  };
-  const token = getTraccarToken();
-  if (token) {
-    headers['Authorization'] = `Bearer ${token}`;
-  }
-  return headers;
-}
-
-/**
- * Realiza una petición HTTP a Traccar y valida que la respuesta sea JSON válido.
- * Si el servidor devuelve HTML (por ejemplo si el proxy no estuviera activo y respondiera index.html),
- * emite un mensaje descriptivo y claro en lugar de un SyntaxError de JSON inesperado.
- */
-async function fetchTraccarJson<T>(url: string, init?: RequestInit): Promise<T> {
-  const res = await fetch(url, {
-    credentials: 'include',
-    ...init,
-  });
-
-  if (!res.ok) {
-    let bodySnippet = '';
-    try {
-      bodySnippet = await res.text();
-    } catch {}
-    throw new Error(
-      `Error de Traccar (${res.status} ${res.statusText}): ${bodySnippet.slice(0, 150)}`
-    );
-  }
-
-  const contentType = res.headers.get('content-type') || '';
-  if (!contentType.includes('application/json')) {
-    throw new Error(
-      `Respuesta inesperada de Traccar: se esperaba JSON pero se recibió "${contentType}". Verifica la configuración de proxy de Traccar (/api) en el servidor web.`
-    );
-  }
-
-  return res.json();
-}
+export { getTraccarToken, buildTraccarUrl, getTraccarHeaders };
 
 /**
  * Verifica el estado de la sesión o usuario con el token configurado.
@@ -148,19 +83,41 @@ export function conectarSocketTraccar(handlers: SocketHandlers): () => void {
     if (estaCerradoManualmente) return;
 
     try {
-      const protocolo = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
-      const host = window.location.host;
       const token = getTraccarToken();
-      const socketUrl = `${protocolo}//${host}/api/socket${token ? `?token=${encodeURIComponent(token)}` : ''}`;
+      let socketUrl: string;
+
+      const traccarEnv = import.meta.env.VITE_TRACCAR_URL as string | undefined;
+      if (traccarEnv && (traccarEnv.startsWith('http://') || traccarEnv.startsWith('https://'))) {
+        try {
+          const u = new URL(traccarEnv);
+          const wsProto = u.protocol === 'https:' ? 'wss:' : 'ws:';
+          socketUrl = `${wsProto}//${u.host}/api/socket${token ? `?token=${encodeURIComponent(token)}` : ''}`;
+        } catch {
+          const protocolo = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+          socketUrl = `${protocolo}//${window.location.host}/api/socket${token ? `?token=${encodeURIComponent(token)}` : ''}`;
+        }
+      } else {
+        const protocolo = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+        socketUrl = `${protocolo}//${window.location.host}/api/socket${token ? `?token=${encodeURIComponent(token)}` : ''}`;
+      }
 
       ws = new WebSocket(socketUrl);
 
       ws.onopen = () => {
+        if (estaCerradoManualmente) {
+          try {
+            ws?.close();
+          } catch {
+            // Ignorar
+          }
+          return;
+        }
         console.log('[LiveSocket] Conectado en tiempo real a Traccar WebSocket');
         handlers.onOpen?.();
       };
 
       ws.onmessage = (event) => {
+        if (estaCerradoManualmente) return;
         try {
           const data = JSON.parse(event.data);
           if (data.devices && handlers.onDevices) {
@@ -175,22 +132,21 @@ export function conectarSocketTraccar(handlers: SocketHandlers): () => void {
       };
 
       ws.onerror = (err) => {
+        if (estaCerradoManualmente) return;
         console.warn('[LiveSocket] Error en conexión WebSocket:', err);
         handlers.onError?.(err);
       };
 
       ws.onclose = () => {
+        if (estaCerradoManualmente) return;
         handlers.onClose?.();
-        if (!estaCerradoManualmente) {
-          console.log('[LiveSocket] Socket cerrado. Reintentando conexión en 5 segundos...');
-          reintentarTimeout = setTimeout(conectar, 5000);
-        }
+        console.log(`[LiveSocket] Socket cerrado. Reintentando conexión en ${WS_RECONNECT_DELAY_MS / 1000}s...`);
+        reintentarTimeout = setTimeout(conectar, WS_RECONNECT_DELAY_MS);
       };
     } catch (err) {
+      if (estaCerradoManualmente) return;
       console.error('[LiveSocket] Error al inicializar WebSocket:', err);
-      if (!estaCerradoManualmente) {
-        reintentarTimeout = setTimeout(conectar, 5000);
-      }
+      reintentarTimeout = setTimeout(conectar, WS_RECONNECT_DELAY_MS);
     }
   };
 
@@ -200,9 +156,29 @@ export function conectarSocketTraccar(handlers: SocketHandlers): () => void {
     estaCerradoManualmente = true;
     if (reintentarTimeout) {
       clearTimeout(reintentarTimeout);
+      reintentarTimeout = null;
     }
-    if (ws && ws.readyState !== WebSocket.CLOSED) {
-      ws.close();
+    if (ws) {
+      // Desasociar listeners para que no se emitan advertencias ni cambios de estado durante el desmontaje
+      ws.onmessage = null;
+      ws.onerror = null;
+      ws.onclose = null;
+
+      if (ws.readyState === WebSocket.OPEN) {
+        ws.close();
+      } else if (ws.readyState === WebSocket.CONNECTING) {
+        // En navegadores modernos, llamar a ws.close() mientras el socket está en CONNECTING
+        // produce el error en consola: "WebSocket is closed before the connection is established."
+        // Al esperar a que se complete el handshake inicial, se cierra limpiamente sin advertencias rojas.
+        ws.onopen = () => {
+          try {
+            ws?.close();
+          } catch {
+            // Ignorar
+          }
+        };
+      }
+      ws = null;
     }
   };
 }

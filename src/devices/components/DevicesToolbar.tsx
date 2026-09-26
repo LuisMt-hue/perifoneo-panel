@@ -96,38 +96,38 @@ export const DevicesToolbar: React.FC<DevicesToolbarProps> = ({
             <span>Nuevo Dispositivo</span>
           </button>
 
-          {/* Botón CRUD Atributos */}
+          {/* Botón CRUD Atributos - Color Sólido Púrpura */}
           <button
             type="button"
             onClick={onOpenAttributeManager}
-            className="h-10 px-3.5 rounded-xl border border-purple-200/90 dark:border-purple-800/80 bg-purple-50/80 dark:bg-purple-950/40 text-purple-700 dark:text-purple-300 text-sm font-semibold hover:bg-purple-100/80 dark:hover:bg-purple-900/40 transition-all flex items-center gap-2 cursor-pointer"
+            className="h-10 px-3.5 rounded-xl bg-purple-600 hover:bg-purple-700 active:bg-purple-800 text-white text-sm font-semibold shadow-xs transition-all flex items-center gap-2 cursor-pointer"
             title="Gestionar atributos (Crear, Renombrar, Eliminar)"
           >
             <Sparkles size={15} />
             <span>Atributos</span>
           </button>
 
-          {/* Botón Selector de Columnas */}
+          {/* Botón Selector de Columnas - Sólido Neutro */}
           <button
             type="button"
             onClick={onOpenColumnModal}
-            className="h-10 px-3.5 rounded-xl border border-zinc-200/90 dark:border-zinc-700/90 bg-white dark:bg-zinc-800/90 text-zinc-700 dark:text-zinc-200 text-sm font-semibold hover:bg-zinc-50 dark:hover:bg-zinc-700/80 transition-all flex items-center gap-2 cursor-pointer shadow-2xs"
+            className="h-10 px-3.5 rounded-xl bg-zinc-800 hover:bg-zinc-900 active:bg-black text-white text-sm font-semibold shadow-xs transition-all flex items-center gap-2 cursor-pointer"
             title="Personalizar columnas visibles"
           >
             <Columns size={15} />
             <span>Columnas</span>
-            <span className="px-2 py-0.5 rounded-full bg-zinc-100 dark:bg-zinc-700 text-xs font-mono font-bold text-zinc-600 dark:text-zinc-300">
+            <span className="px-2 py-0.5 rounded-full bg-zinc-950 text-xs font-mono font-bold text-zinc-200">
               {totalColumnasVisibles}
             </span>
           </button>
 
-          {/* Botón Recargar */}
+          {/* Botón Recargar - Sólido */}
           <button
             type="button"
             onClick={onRecargar}
             disabled={cargando}
             title="Recargar dispositivos"
-            className="h-10 w-10 rounded-xl border border-zinc-200/90 dark:border-zinc-700/90 bg-white dark:bg-zinc-800/90 text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-100 hover:bg-zinc-50 dark:hover:bg-zinc-700/80 transition-all flex items-center justify-center cursor-pointer disabled:opacity-50 shadow-2xs"
+            className="h-10 w-10 rounded-xl bg-zinc-100 hover:bg-zinc-200 active:bg-zinc-300 dark:bg-zinc-800 dark:hover:bg-zinc-700 border border-zinc-300 dark:border-zinc-700 text-zinc-700 dark:text-zinc-200 shadow-xs transition-all flex items-center justify-center cursor-pointer disabled:opacity-50"
           >
             <RotateCw size={15} className={cargando ? 'animate-spin text-[#155BD0]' : ''} />
           </button>
@@ -137,14 +137,14 @@ export const DevicesToolbar: React.FC<DevicesToolbarProps> = ({
       {/* Fila Inferior: Filtros de Estado tipo Pills y Auditoría de Atributos */}
       <div className="flex items-center justify-between gap-3 flex-wrap pt-1">
         <div className="flex items-center gap-2 flex-wrap">
-          {/* Pills de Estado con diseño Apple */}
+          {/* Pills de Estado con colores sólidos */}
           <button
             type="button"
             onClick={() => handleStatusChange('all')}
             className={`h-8 px-3.5 rounded-full text-xs font-semibold transition-all cursor-pointer ${
               filters.status === 'all'
-                ? 'bg-zinc-900 dark:bg-zinc-100 text-white dark:text-zinc-900 shadow-2xs'
-                : 'bg-zinc-100 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-400 hover:bg-zinc-200 dark:hover:bg-zinc-700'
+                ? 'bg-zinc-900 dark:bg-zinc-100 text-white dark:text-zinc-900 shadow-xs'
+                : 'bg-zinc-100 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-400 hover:bg-zinc-200 dark:hover:bg-zinc-700 border border-zinc-200 dark:border-zinc-700'
             }`}
           >
             Todos ({totalDispositivos})
@@ -155,11 +155,11 @@ export const DevicesToolbar: React.FC<DevicesToolbarProps> = ({
             onClick={() => handleStatusChange('online')}
             className={`h-8 px-3.5 rounded-full text-xs font-semibold transition-all cursor-pointer flex items-center gap-1.5 ${
               filters.status === 'online'
-                ? 'bg-emerald-600 text-white shadow-2xs'
-                : 'bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-400 hover:bg-emerald-100 dark:hover:bg-emerald-900/40'
+                ? 'bg-emerald-600 hover:bg-emerald-700 text-white shadow-xs'
+                : 'bg-zinc-100 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-400 hover:bg-zinc-200 dark:hover:bg-zinc-700 border border-zinc-200 dark:border-zinc-700'
             }`}
           >
-            <span className="w-2 h-2 rounded-full bg-emerald-500" />
+            <span className={`w-2 h-2 rounded-full ${filters.status === 'online' ? 'bg-white' : 'bg-emerald-500'}`} />
             <span>En Línea ({totalOnline})</span>
           </button>
 
@@ -168,11 +168,11 @@ export const DevicesToolbar: React.FC<DevicesToolbarProps> = ({
             onClick={() => handleStatusChange('offline')}
             className={`h-8 px-3.5 rounded-full text-xs font-semibold transition-all cursor-pointer flex items-center gap-1.5 ${
               filters.status === 'offline'
-                ? 'bg-zinc-700 text-white shadow-2xs'
-                : 'bg-zinc-100 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-400 hover:bg-zinc-200 dark:hover:bg-zinc-700'
+                ? 'bg-zinc-700 hover:bg-zinc-800 text-white shadow-xs'
+                : 'bg-zinc-100 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-400 hover:bg-zinc-200 dark:hover:bg-zinc-700 border border-zinc-200 dark:border-zinc-700'
             }`}
           >
-            <span className="w-2 h-2 rounded-full bg-zinc-400" />
+            <span className={`w-2 h-2 rounded-full ${filters.status === 'offline' ? 'bg-white' : 'bg-zinc-400'}`} />
             <span>Desconectados ({totalOffline})</span>
           </button>
 
@@ -181,8 +181,8 @@ export const DevicesToolbar: React.FC<DevicesToolbarProps> = ({
             onClick={() => handleStatusChange('disabled')}
             className={`h-8 px-3.5 rounded-full text-xs font-semibold transition-all cursor-pointer ${
               filters.status === 'disabled'
-                ? 'bg-rose-600 text-white shadow-2xs'
-                : 'bg-rose-50 dark:bg-rose-950/40 text-rose-700 dark:text-rose-400 hover:bg-rose-100 dark:hover:bg-rose-900/40'
+                ? 'bg-rose-600 hover:bg-rose-700 text-white shadow-xs'
+                : 'bg-zinc-100 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-400 hover:bg-zinc-200 dark:hover:bg-zinc-700 border border-zinc-200 dark:border-zinc-700'
             }`}
           >
             Deshabilitados

@@ -107,7 +107,7 @@ export const DeviceInlineCell: React.FC<DeviceInlineCellProps> = ({
           onMouseDown={(e) => e.preventDefault()}
           onClick={handleConfirm}
           title="Guardar (Enter)"
-          className="p-1 rounded-md text-emerald-600 dark:text-emerald-400 hover:bg-emerald-50 dark:hover:bg-emerald-950/50 cursor-pointer"
+          className="p-1 rounded-md bg-emerald-600 hover:bg-emerald-700 text-white shadow-xs cursor-pointer"
         >
           <Check size={13} />
         </button>
@@ -116,7 +116,7 @@ export const DeviceInlineCell: React.FC<DeviceInlineCellProps> = ({
           onMouseDown={(e) => e.preventDefault()}
           onClick={handleCancel}
           title="Cancelar (Esc)"
-          className="p-1 rounded-md text-zinc-400 hover:bg-zinc-100 dark:hover:bg-zinc-800 cursor-pointer"
+          className="p-1 rounded-md bg-zinc-200 hover:bg-zinc-300 dark:bg-zinc-700 dark:hover:bg-zinc-600 text-zinc-700 dark:text-zinc-200 cursor-pointer"
         >
           <X size={13} />
         </button>

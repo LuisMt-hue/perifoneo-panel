@@ -73,7 +73,7 @@ server {
 
     # Proxy para WebSocket de Traccar en tiempo real
     location /api/socket {
-        proxy_pass http://traccar:8082/api/socket;
+        proxy_pass ${TRACCAR_BACKEND_URL}/api/socket;
         proxy_http_version 1.1;
         proxy_set_header Upgrade $http_upgrade;
         proxy_set_header Connection "upgrade";
@@ -87,7 +87,7 @@ server {
 
     # Proxy para la API REST de Traccar (dispositivos, posiciones, geocercas, recorridos)
     location /api/ {
-        proxy_pass http://traccar:8082/api/;
+        proxy_pass ${TRACCAR_BACKEND_URL}/api/;
         proxy_http_version 1.1;
         proxy_set_header Host $host;
         proxy_set_header X-Real-IP $remote_addr;

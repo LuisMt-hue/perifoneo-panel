@@ -132,11 +132,11 @@ export const LiveMapFilters: React.FC<LiveMapFiltersProps> = ({
             onClick={() => setEstadoFiltro('ACTIVOS')}
             className={`h-7 flex items-center gap-1.5 px-2.5 rounded-lg transition-all cursor-pointer ${
               filters.estadoFiltro === 'ACTIVOS'
-                ? 'bg-emerald-500 text-white shadow-xs font-semibold'
-                : 'text-emerald-600 dark:text-emerald-400 hover:bg-emerald-50/80 dark:hover:bg-emerald-950/30'
+                ? 'bg-emerald-600 text-white shadow-xs font-semibold'
+                : 'text-zinc-600 dark:text-zinc-400 hover:bg-zinc-200/60 dark:hover:bg-zinc-700/60'
             }`}
           >
-            <CheckCircle2 size={12} />
+            <CheckCircle2 size={12} className={filters.estadoFiltro === 'ACTIVOS' ? 'text-white' : 'text-emerald-600'} />
             <span className="font-mono tabular-nums">{counts.activos}</span>
           </button>
 
@@ -146,10 +146,10 @@ export const LiveMapFilters: React.FC<LiveMapFiltersProps> = ({
             className={`h-7 flex items-center gap-1.5 px-2.5 rounded-lg transition-all cursor-pointer ${
               filters.estadoFiltro === 'DETENIDOS'
                 ? 'bg-amber-500 text-white shadow-xs font-semibold'
-                : 'text-amber-600 dark:text-amber-400 hover:bg-amber-50/80 dark:hover:bg-amber-950/30'
+                : 'text-zinc-600 dark:text-zinc-400 hover:bg-zinc-200/60 dark:hover:bg-zinc-700/60'
             }`}
           >
-            <PauseCircle size={12} />
+            <PauseCircle size={12} className={filters.estadoFiltro === 'DETENIDOS' ? 'text-white' : 'text-amber-500'} />
             <span className="font-mono tabular-nums">{counts.detenidos}</span>
           </button>
 
@@ -160,36 +160,36 @@ export const LiveMapFilters: React.FC<LiveMapFiltersProps> = ({
             }
             className={`h-7 flex items-center gap-1.5 px-2.5 rounded-lg transition-all cursor-pointer ${
               filters.estadoFiltro === 'DESCONECTADOS'
-                ? 'bg-zinc-600 text-white shadow-xs font-semibold'
-                : 'text-zinc-500 dark:text-zinc-400 hover:bg-zinc-200/60 dark:hover:bg-zinc-700/50'
+                ? 'bg-zinc-700 text-white shadow-xs font-semibold'
+                : 'text-zinc-600 dark:text-zinc-400 hover:bg-zinc-200/60 dark:hover:bg-zinc-700/60'
             }`}
           >
-            <WifiOff size={12} />
+            <WifiOff size={12} className={filters.estadoFiltro === 'DESCONECTADOS' ? 'text-white' : 'text-zinc-500'} />
             <span className="font-mono tabular-nums">{counts.desconectados}</span>
           </button>
         </div>
 
-        {/* Toggle Ocultar Desconectados */}
+        {/* Toggle Ocultar Desconectados - Sólido */}
         <button
           type="button"
           onClick={() => setOcultarDesconectados((prev) => !prev)}
-          className={`hidden sm:flex items-center h-8 gap-1.5 px-2.5 rounded-xl text-[11px] font-medium transition-all border shrink-0 cursor-pointer ${
+          className={`hidden sm:flex items-center h-8 gap-1.5 px-2.5 rounded-xl text-[11px] font-semibold transition-all shrink-0 cursor-pointer ${
             filters.ocultarDesconectados
-              ? 'bg-blue-500/10 text-blue-700 dark:text-blue-300 border-blue-500/20'
-              : 'bg-zinc-100/90 dark:bg-zinc-800/80 text-zinc-600 dark:text-zinc-400 border-zinc-200/60 dark:border-white/[0.08]'
+              ? 'bg-blue-600 hover:bg-blue-700 text-white shadow-xs'
+              : 'bg-zinc-200/80 hover:bg-zinc-300 dark:bg-zinc-800 dark:hover:bg-zinc-700 text-zinc-700 dark:text-zinc-300 border border-zinc-300/80 dark:border-zinc-700'
           }`}
         >
           {filters.ocultarDesconectados ? <EyeOff size={12} /> : <Eye size={12} />}
           <span>{filters.ocultarDesconectados ? 'Sin desconectados' : 'Todos'}</span>
         </button>
 
-        {/* Botón Limpiar Filtros */}
+        {/* Botón Limpiar Filtros - Sólido Rojo */}
         {hayFiltrosActivos && (
           <button
             type="button"
             onClick={limpiarFiltros}
             title="Restablecer filtros"
-            className="flex items-center h-8 gap-1 px-2.5 rounded-xl bg-rose-500/10 hover:bg-rose-500/20 text-rose-600 dark:text-rose-400 border border-rose-500/20 text-[11px] font-medium transition-all shrink-0 cursor-pointer"
+            className="flex items-center h-8 gap-1 px-2.5 rounded-xl bg-rose-600 hover:bg-rose-700 active:bg-rose-800 text-white shadow-xs text-[11px] font-semibold transition-all shrink-0 cursor-pointer"
           >
             <RotateCcw size={11} />
             <span>Limpiar</span>

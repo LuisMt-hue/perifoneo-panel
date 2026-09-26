@@ -21,6 +21,12 @@ export interface UseLiveTrackingReturn {
   liveTrails: Record<number, [number, number][]>;
 }
 
+/**
+ * Constantes de rastreo en tiempo real y sondeo de respaldo
+ */
+export const MAX_LIVE_TRAIL_POINTS = 150;
+export const POLLING_FALLBACK_INTERVAL_MS = 15000;
+
 export function useLiveTracking(): UseLiveTrackingReturn {
   const [devicesMap, setDevicesMap] = useState<Record<number, TraccarDevice>>({});
   const [positionsMap, setPositionsMap] = useState<Record<number, TraccarPosition>>({});
@@ -105,7 +111,7 @@ export function useLiveTracking(): UseLiveTrackingReturn {
               const prevPoints = next[p.deviceId] || [];
               const last = prevPoints[prevPoints.length - 1];
               if (!last || last[0] !== p.latitude || last[1] !== p.longitude) {
-                next[p.deviceId] = [...prevPoints.slice(-150), [p.latitude, p.longitude]];
+                next[p.deviceId] = [...prevPoints.slice(-MAX_LIVE_TRAIL_POINTS), [p.latitude, p.longitude]];
                 changed = true;
               }
             }
@@ -135,7 +141,7 @@ export function useLiveTracking(): UseLiveTrackingReturn {
       } catch {
         // Fallback silencioso en segundo plano
       }
-    }, 15000);
+    }, POLLING_FALLBACK_INTERVAL_MS);
 
     return () => clearInterval(interval);
   }, [socketConectado]);

@@ -17,6 +17,12 @@ import {
 } from '../api';
 import { useColumnVisibility } from './useColumnVisibility';
 
+/**
+ * Constantes de configuración para el gestor de dispositivos
+ */
+export const DEFAULT_PAGE_SIZE = 25;
+export const DEFAULT_PRIORITY_KEYS = ['base', 'distrito', 'placa', 'sector'] as const;
+
 export function useDevicesManager() {
   const [devices, setDevices] = useState<ManagedDevice[]>([]);
   const [cargando, setCargando] = useState<boolean>(true);
@@ -57,7 +63,7 @@ export function useDevicesManager() {
 
   // Paginación
   const [paginaActual, setPaginaActual] = useState<number>(1);
-  const [filasPorPagina, setFilasPorPagina] = useState<number>(25);
+  const [filasPorPagina, setFilasPorPagina] = useState<number>(DEFAULT_PAGE_SIZE);
 
   // Cargar dispositivos desde Traccar
   const cargarDispositivos = useCallback(async () => {
@@ -87,10 +93,7 @@ export function useDevicesManager() {
   const todasLasClavesAtributos = useMemo(() => {
     const set = new Set<string>();
     // Siempre asegurar que las claves prioritarias estén disponibles
-    set.add('base');
-    set.add('distrito');
-    set.add('placa');
-    set.add('sector');
+    DEFAULT_PRIORITY_KEYS.forEach((key) => set.add(key));
 
     for (const d of devices) {
       if (d.attributes && typeof d.attributes === 'object') {

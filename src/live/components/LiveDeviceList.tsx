@@ -44,7 +44,7 @@ export const LiveDeviceList: React.FC<LiveDeviceListProps> = ({
           <button
             type="button"
             onClick={onResetFilters}
-            className="mt-1 px-2.5 py-1 rounded-lg bg-zinc-100 hover:bg-zinc-200 dark:bg-zinc-800 dark:hover:bg-zinc-700 text-[11px] text-blue-600 dark:text-blue-400 font-medium transition-colors cursor-pointer"
+            className="mt-1 px-3 py-1.5 rounded-lg bg-blue-600 hover:bg-blue-700 text-[11px] text-white font-semibold shadow-xs transition-colors cursor-pointer"
           >
             Restablecer filtros
           </button>

@@ -63,7 +63,7 @@ export const LiveToolbar: React.FC<LiveToolbarProps> = ({ filterProps, geofences
             type="button"
             onClick={limpiarFiltros}
             title="Restablecer filtros"
-            className="p-1.5 rounded-xl border border-rose-200/60 dark:border-rose-800/60 bg-rose-50 dark:bg-rose-950/40 text-rose-600 dark:text-rose-400 hover:bg-rose-100 transition-colors shrink-0"
+            className="p-1.5 rounded-xl bg-rose-600 hover:bg-rose-700 active:bg-rose-800 text-white shadow-xs transition-colors shrink-0 cursor-pointer"
           >
             <RotateCcw size={14} />
           </button>
@@ -129,11 +129,11 @@ export const LiveToolbar: React.FC<LiveToolbarProps> = ({ filterProps, geofences
             onClick={() => setEstadoFiltro('ACTIVOS')}
             className={`flex items-center gap-1 px-2 py-1 rounded-md transition-all ${
               filters.estadoFiltro === 'ACTIVOS'
-                ? 'bg-emerald-500 text-white shadow-xs font-semibold'
-                : 'text-emerald-600 dark:text-emerald-400 hover:bg-emerald-50 dark:hover:bg-emerald-950/30'
+                ? 'bg-emerald-600 text-white shadow-xs font-semibold'
+                : 'text-zinc-600 dark:text-zinc-400 hover:bg-zinc-200/60 dark:hover:bg-zinc-700/60'
             }`}
           >
-            <CheckCircle2 size={11} />
+            <CheckCircle2 size={11} className={filters.estadoFiltro === 'ACTIVOS' ? 'text-white' : 'text-emerald-600'} />
             <span>{counts.activos}</span>
           </button>
 
@@ -143,10 +143,10 @@ export const LiveToolbar: React.FC<LiveToolbarProps> = ({ filterProps, geofences
             className={`flex items-center gap-1 px-2 py-1 rounded-md transition-all ${
               filters.estadoFiltro === 'DETENIDOS'
                 ? 'bg-amber-500 text-white shadow-xs font-semibold'
-                : 'text-amber-600 dark:text-amber-400 hover:bg-amber-50 dark:hover:bg-amber-950/30'
+                : 'text-zinc-600 dark:text-zinc-400 hover:bg-zinc-200/60 dark:hover:bg-zinc-700/60'
             }`}
           >
-            <PauseCircle size={11} />
+            <PauseCircle size={11} className={filters.estadoFiltro === 'DETENIDOS' ? 'text-white' : 'text-amber-500'} />
             <span>{counts.detenidos}</span>
           </button>
 
@@ -157,16 +157,16 @@ export const LiveToolbar: React.FC<LiveToolbarProps> = ({ filterProps, geofences
             }
             className={`flex items-center gap-1 px-2 py-1 rounded-md transition-all ${
               filters.estadoFiltro === 'DESCONECTADOS'
-                ? 'bg-zinc-600 text-white shadow-xs font-semibold'
-                : 'text-zinc-500 dark:text-zinc-400 hover:bg-zinc-200/50 dark:hover:bg-zinc-700/50'
+                ? 'bg-zinc-700 text-white shadow-xs font-semibold'
+                : 'text-zinc-600 dark:text-zinc-400 hover:bg-zinc-200/60 dark:hover:bg-zinc-700/60'
             }`}
           >
-            <WifiOff size={11} />
+            <WifiOff size={11} className={filters.estadoFiltro === 'DESCONECTADOS' ? 'text-white' : 'text-zinc-500'} />
             <span>{counts.desconectados}</span>
           </button>
         </div>
 
-        {/* Toggle para Ocultar Desconectados */}
+        {/* Toggle para Ocultar Desconectados - Sólido */}
         <button
           type="button"
           onClick={() => setOcultarDesconectados((prev) => !prev)}
@@ -175,10 +175,10 @@ export const LiveToolbar: React.FC<LiveToolbarProps> = ({ filterProps, geofences
               ? 'Mostrando solo conectados (Click para ver todos)'
               : 'Mostrando todos (Click para ocultar desconectados)'
           }
-          className={`flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-2xs font-medium transition-all border ${
+          className={`flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-2xs font-semibold transition-all cursor-pointer ${
             filters.ocultarDesconectados
-              ? 'bg-blue-50 dark:bg-blue-950/40 text-blue-700 dark:text-blue-300 border-blue-200/60 dark:border-blue-800/60'
-              : 'bg-zinc-100 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-400 border-zinc-200/60 dark:border-zinc-700/60'
+              ? 'bg-blue-600 hover:bg-blue-700 text-white shadow-xs'
+              : 'bg-zinc-200/80 hover:bg-zinc-300 dark:bg-zinc-800 dark:hover:bg-zinc-700 text-zinc-700 dark:text-zinc-300 border border-zinc-300/80 dark:border-zinc-700'
           }`}
         >
           {filters.ocultarDesconectados ? <EyeOff size={12} /> : <Eye size={12} />}
