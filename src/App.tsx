@@ -10,7 +10,6 @@ import LivePage from './live/LivePage';
 import DevicesPage from './devices/DevicesPage';
 import HistorialRecorridosPage from './history/HistorialRecorridosPage';
 import DetalleRecorridoPage from './history/DetalleRecorridoPage';
-import ReportesPage from './reports/ReportesPage';
 
 /**
  * Componente Guard para la ruta de Login.
@@ -26,7 +25,7 @@ const LoginRoute: React.FC = () => {
  *
  * Estructura la navegación jerárquica:
  * - Rutas públicas: /login
- * - Rutas operativas autenticadas: /, /devices, /historial, /recorrido/:id, /reportes
+ * - Rutas operativas autenticadas: /, /devices, /historial, /recorrido/:id
  */
 export const App: React.FC = () => {
   return (
@@ -42,7 +41,6 @@ export const App: React.FC = () => {
           <Route path="/devices" element={<DevicesPage />} />
           <Route path="/historial" element={<HistorialRecorridosPage />} />
           <Route path="/recorrido/:id" element={<DetalleRecorridoPage />} />
-          <Route path="/reportes" element={<ReportesPage />} />
 
           {/* Rutas obsoletas de admin redirigidas */}
           <Route path="/admin/*" element={<Navigate to="/" replace />} />

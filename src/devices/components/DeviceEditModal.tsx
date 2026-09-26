@@ -1,7 +1,8 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { X, Check, Smartphone, Loader2 } from 'lucide-react';
 import type { TraccarDevice, ManagedDevice } from '../types';
 import type { TraccarGeofence, TraccarGroup } from '../../live/types';
+import SearchSelectCombobox from '../../shared/components/ui/SearchSelectCombobox';
 
 interface DeviceEditModalProps {
   device: ManagedDevice | null;
@@ -10,6 +11,7 @@ interface DeviceEditModalProps {
   onSave: (device: TraccarDevice) => Promise<unknown>;
   geofences: TraccarGeofence[];
   groups: TraccarGroup[];
+  basesConocidas: string[];
 }
 
 export const DeviceEditModal: React.FC<DeviceEditModalProps> = ({
@@ -19,6 +21,7 @@ export const DeviceEditModal: React.FC<DeviceEditModalProps> = ({
   onSave,
   geofences,
   groups,
+  basesConocidas,
 }) => {
   const [name, setName] = useState('');
   const [uniqueId, setUniqueId] = useState('');
@@ -30,6 +33,10 @@ export const DeviceEditModal: React.FC<DeviceEditModalProps> = ({
 
   const [saving, setSaving] = useState(false);
   const [errorLocal, setErrorLocal] = useState<string | null>(null);
+
+  const opcionesGrupo = useMemo(() => groups.map((g) => ({ value: String(g.id), label: g.name })), [groups]);
+  const opcionesSector = useMemo(() => geofences.map((g) => ({ value: g.name, label: g.name })), [geofences]);
+  const opcionesBase = useMemo(() => basesConocidas.map((b) => ({ value: b, label: b })), [basesConocidas]);
 
   useEffect(() => {
     if (device && isOpen) {
@@ -101,13 +108,13 @@ export const DeviceEditModal: React.FC<DeviceEditModalProps> = ({
         if (e.target === e.currentTarget && !saving) onClose();
       }}
     >
-      <div className="w-full max-w-md bg-white dark:bg-zinc-900 backdrop-blur-2xl border border-zinc-200/80 dark:border-zinc-800 rounded-3xl shadow-2xl p-6 overflow-hidden max-h-[90vh] flex flex-col">
+      <div className="w-full max-w-lg bg-white dark:bg-zinc-900 backdrop-blur-2xl border border-zinc-200/80 dark:border-zinc-800 rounded-2xl shadow-2xl p-6 overflow-hidden max-h-[90vh] flex flex-col">
         <div className="flex items-center justify-between pb-4 border-b border-zinc-100 dark:border-zinc-800 shrink-0">
           <div className="flex items-center gap-2.5">
             <div className="w-7 h-7 rounded-xl bg-blue-600/10 text-[#155BD0] dark:text-blue-400 flex items-center justify-center">
               <Smartphone size={16} />
             </div>
-            <h2 className="text-base font-bold text-zinc-900 dark:text-zinc-100">Editar Dispositivo</h2>
+            <h2 className="text-[15px] font-semibold text-zinc-900 dark:text-zinc-100">Editar Dispositivo</h2>
           </div>
           <button
             type="button"
@@ -121,28 +128,30 @@ export const DeviceEditModal: React.FC<DeviceEditModalProps> = ({
 
         <form onSubmit={handleSubmit} className="mt-4 space-y-4 overflow-y-auto flex-1 pr-1">
           {errorLocal && (
-            <div className="p-3.5 rounded-2xl bg-rose-50 dark:bg-rose-950/50 border border-rose-200 dark:border-rose-800 text-rose-700 dark:text-rose-300 text-sm">
+            <div className="p-3 rounded-xl bg-rose-50 dark:bg-rose-950/50 border border-rose-200 dark:border-rose-800 text-rose-700 dark:text-rose-300 text-[13px]">
               {errorLocal}
             </div>
           )}
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <div>
-              <label className="block text-xs font-semibold uppercase tracking-wider text-zinc-700 dark:text-zinc-300 mb-1.5">
-                Nombre <span className="text-rose-500">*</span>
-              </label>
-              <input
-                type="text"
-                required
-                disabled={saving}
-                value={name}
-                onChange={(e) => setName(e.target.value)}
-                className="w-full h-10 px-3.5 text-sm bg-zinc-50 dark:bg-zinc-800/80 border border-zinc-200/80 dark:border-zinc-700 rounded-xl text-zinc-900 dark:text-zinc-100 focus:outline-none focus:ring-2 focus:ring-[#155BD0]/20 focus:border-[#155BD0] font-semibold transition-all"
-              />
-            </div>
+          {/* Nombre: fila completa */}
+          <div>
+            <label className="block text-[11px] font-semibold uppercase tracking-wider text-zinc-500 dark:text-zinc-400 mb-1.5">
+              Nombre <span className="text-rose-500">*</span>
+            </label>
+            <input
+              type="text"
+              required
+              disabled={saving}
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+              className="w-full h-9 px-3 text-[13px] bg-zinc-50 dark:bg-zinc-800/80 border border-zinc-200 dark:border-zinc-700 rounded-lg text-zinc-900 dark:text-zinc-100 focus:outline-none focus:ring-2 focus:ring-[#155BD0]/20 focus:border-[#155BD0] font-medium transition-all"
+            />
+          </div>
 
+          {/* DNI + Celular: misma fila */}
+          <div className="grid grid-cols-2 gap-3">
             <div>
-              <label className="block text-xs font-semibold uppercase tracking-wider text-zinc-700 dark:text-zinc-300 mb-1.5">
+              <label className="block text-[11px] font-semibold uppercase tracking-wider text-zinc-500 dark:text-zinc-400 mb-1.5">
                 DNI <span className="text-rose-500">*</span>
               </label>
               <input
@@ -151,88 +160,74 @@ export const DeviceEditModal: React.FC<DeviceEditModalProps> = ({
                 disabled={saving}
                 value={uniqueId}
                 onChange={(e) => setUniqueId(e.target.value)}
-                className="w-full h-10 px-3.5 text-sm bg-zinc-50 dark:bg-zinc-800/80 border border-zinc-200/80 dark:border-zinc-700 rounded-xl text-zinc-900 dark:text-zinc-100 focus:outline-none focus:ring-2 focus:ring-[#155BD0]/20 focus:border-[#155BD0] font-mono transition-all"
+                className="w-full h-9 px-3 text-[13px] bg-zinc-50 dark:bg-zinc-800/80 border border-zinc-200 dark:border-zinc-700 rounded-lg text-zinc-900 dark:text-zinc-100 focus:outline-none focus:ring-2 focus:ring-[#155BD0]/20 focus:border-[#155BD0] font-mono transition-all"
               />
             </div>
-          </div>
-
-          <div>
-            <label className="block text-xs font-semibold uppercase tracking-wider text-zinc-700 dark:text-zinc-300 mb-1.5">
-              Celular
-            </label>
-            <input
-              type="text"
-              disabled={saving}
-              value={phone}
-              onChange={(e) => setPhone(e.target.value)}
-              placeholder="Número telefónico"
-              className="w-full h-10 px-3.5 text-sm bg-zinc-50 dark:bg-zinc-800/80 border border-zinc-200/80 dark:border-zinc-700 rounded-xl text-zinc-900 dark:text-zinc-100 focus:outline-none focus:ring-2 focus:ring-[#155BD0]/20 focus:border-[#155BD0] font-mono transition-all"
-            />
-          </div>
-
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
             <div>
-              <label className="block text-xs font-semibold uppercase tracking-wider text-zinc-700 dark:text-zinc-300 mb-1.5">
-                Grupo
-              </label>
-              <select
-                disabled={saving}
-                value={groupId}
-                onChange={(e) => setGroupId(e.target.value)}
-                className="w-full h-10 px-3.5 text-sm bg-zinc-50 dark:bg-zinc-800/80 border border-zinc-200/80 dark:border-zinc-700 rounded-xl text-zinc-900 dark:text-zinc-100 focus:outline-none focus:ring-2 focus:ring-[#155BD0]/20 focus:border-[#155BD0] cursor-pointer transition-all"
-              >
-                <option value="">Sin grupo</option>
-                {groups.length === 0 && (
-                  <option value="" disabled>
-                    No hay grupos creados en Traccar aún
-                  </option>
-                )}
-                {groups.map((g) => (
-                  <option key={g.id} value={g.id}>
-                    {g.name}
-                  </option>
-                ))}
-              </select>
-            </div>
-
-            <div>
-              <label className="block text-xs font-semibold uppercase tracking-wider text-zinc-700 dark:text-zinc-300 mb-1.5">
-                Base
+              <label className="block text-[11px] font-semibold uppercase tracking-wider text-zinc-500 dark:text-zinc-400 mb-1.5">
+                Celular
               </label>
               <input
                 type="text"
                 disabled={saving}
-                value={base}
-                onChange={(e) => setBase(e.target.value)}
-                placeholder="Base asignada"
-                className="w-full h-10 px-3.5 text-sm bg-zinc-50 dark:bg-zinc-800/80 border border-zinc-200/80 dark:border-zinc-700 rounded-xl text-zinc-900 dark:text-zinc-100 focus:outline-none focus:ring-2 focus:ring-[#155BD0]/20 focus:border-[#155BD0] transition-all"
+                value={phone}
+                onChange={(e) => setPhone(e.target.value)}
+                placeholder="Número telefónico"
+                className="w-full h-9 px-3 text-[13px] bg-zinc-50 dark:bg-zinc-800/80 border border-zinc-200 dark:border-zinc-700 rounded-lg text-zinc-900 dark:text-zinc-100 focus:outline-none focus:ring-2 focus:ring-[#155BD0]/20 focus:border-[#155BD0] font-mono transition-all"
               />
-            </div>
-
-            <div>
-              <label className="block text-xs font-semibold uppercase tracking-wider text-zinc-700 dark:text-zinc-300 mb-1.5">
-                Sector
-              </label>
-              <select
-                disabled={saving}
-                value={sector}
-                onChange={(e) => setSector(e.target.value)}
-                className="w-full h-10 px-3.5 text-sm bg-zinc-50 dark:bg-zinc-800/80 border border-zinc-200/80 dark:border-zinc-700 rounded-xl text-zinc-900 dark:text-zinc-100 focus:outline-none focus:ring-2 focus:ring-[#155BD0]/20 focus:border-[#155BD0] cursor-pointer transition-all"
-              >
-                <option value="">Sin sector</option>
-                {geofences.map((g) => (
-                  <option key={g.id} value={g.name}>
-                    {g.name}
-                  </option>
-                ))}
-              </select>
             </div>
           </div>
 
-          <div className="flex items-center justify-between p-3.5 rounded-2xl bg-zinc-50 dark:bg-zinc-800/60 border border-zinc-200/60 dark:border-zinc-800">
+          {/* Grupo, Base, Sector: una lista debajo de la otra */}
+          <div>
+            <label className="block text-[11px] font-semibold uppercase tracking-wider text-zinc-500 dark:text-zinc-400 mb-1.5">
+              Grupo
+            </label>
+            <SearchSelectCombobox
+              options={opcionesGrupo}
+              value={groupId}
+              onChange={setGroupId}
+              placeholder={opcionesGrupo.length === 0 ? 'Sin grupos en Traccar' : 'Buscar grupo...'}
+              emptyOptionLabel="Sin grupo"
+              allowCustomValue={false}
+              disabled={saving}
+            />
+          </div>
+
+          <div>
+            <label className="block text-[11px] font-semibold uppercase tracking-wider text-zinc-500 dark:text-zinc-400 mb-1.5">
+              Base
+            </label>
+            <SearchSelectCombobox
+              options={opcionesBase}
+              value={base}
+              onChange={setBase}
+              placeholder="Buscar o escribir una base..."
+              emptyOptionLabel="Sin base"
+              allowCustomValue
+              disabled={saving}
+            />
+          </div>
+
+          <div>
+            <label className="block text-[11px] font-semibold uppercase tracking-wider text-zinc-500 dark:text-zinc-400 mb-1.5">
+              Sector
+            </label>
+            <SearchSelectCombobox
+              options={opcionesSector}
+              value={sector}
+              onChange={setSector}
+              placeholder="Buscar sector..."
+              emptyOptionLabel="Sin sector"
+              allowCustomValue={false}
+              disabled={saving}
+            />
+          </div>
+
+          <div className="flex items-center justify-between p-3 rounded-xl bg-zinc-50 dark:bg-zinc-800/60 border border-zinc-200/60 dark:border-zinc-800">
             <div>
-              <div className="text-sm font-semibold text-zinc-800 dark:text-zinc-200">Habilitación</div>
-              <div className="text-xs text-zinc-500">
+              <div className="text-[13px] font-semibold text-zinc-800 dark:text-zinc-200">Habilitación</div>
+              <div className="text-[11px] text-zinc-500">
                 {disabled ? 'Deshabilitado en Traccar' : 'Habilitado y activo para rastreo'}
               </div>
             </div>
@@ -240,7 +235,7 @@ export const DeviceEditModal: React.FC<DeviceEditModalProps> = ({
               type="button"
               disabled={saving}
               onClick={() => setDisabled(!disabled)}
-              className={`h-8 px-4 rounded-full text-xs font-bold font-mono transition-all cursor-pointer shadow-xs ${
+              className={`h-7 px-3.5 rounded-full text-[11px] font-bold font-mono transition-all cursor-pointer shadow-xs ${
                 disabled
                   ? 'bg-rose-600 hover:bg-rose-700 text-white'
                   : 'bg-emerald-600 hover:bg-emerald-700 text-white'
@@ -255,23 +250,23 @@ export const DeviceEditModal: React.FC<DeviceEditModalProps> = ({
               type="button"
               disabled={saving}
               onClick={onClose}
-              className="h-10 px-4 text-sm font-semibold rounded-xl text-zinc-600 dark:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-colors cursor-pointer"
+              className="h-9 px-4 text-[13px] font-semibold rounded-lg text-zinc-600 dark:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-colors cursor-pointer"
             >
               Cancelar
             </button>
             <button
               type="submit"
               disabled={saving || !name.trim() || !uniqueId.trim()}
-              className="h-10 flex items-center gap-2 px-5 text-sm font-semibold rounded-xl bg-[#155BD0] hover:bg-[#114eb3] text-white shadow-sm disabled:opacity-50 transition-all cursor-pointer"
+              className="h-9 flex items-center gap-2 px-5 text-[13px] font-semibold rounded-lg bg-[#155BD0] hover:bg-[#114eb3] text-white shadow-sm disabled:opacity-50 transition-all cursor-pointer"
             >
               {saving ? (
                 <>
-                  <Loader2 size={15} className="animate-spin" />
+                  <Loader2 size={14} className="animate-spin" />
                   <span>Guardando...</span>
                 </>
               ) : (
                 <>
-                  <Check size={15} />
+                  <Check size={14} />
                   <span>Guardar Cambios</span>
                 </>
               )}

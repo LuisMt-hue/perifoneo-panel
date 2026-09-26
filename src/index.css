@@ -2,6 +2,22 @@
 
 @custom-variant dark (&:where(.dark, .dark *));
 
+/*
+ * Tamaños de texto por debajo de `text-xs` (12px), usados en toda la app para
+ * metadatos/badges (ej. DNI, timestamps). Sin esta definición, `text-2xs`/`text-3xs`
+ * no existen en el theme de Tailwind v4 y no generan ninguna regla CSS: el texto
+ * queda sin tamaño propio y hereda el del contenedor más cercano que sí tenga uno,
+ * lo que produce tamaños de letra inconsistentes según el contexto.
+ * 11px es el equivalente al estilo "Subheadline" de macOS (HIG); 10px es el mínimo
+ * legible que define HIG para macOS — no bajar de ahí.
+ */
+@theme {
+  --text-2xs: 0.6875rem; /* 11px */
+  --text-2xs--line-height: calc(0.875 / 0.6875);
+  --text-3xs: 0.625rem; /* 10px — mínimo HIG para macOS */
+  --text-3xs--line-height: calc(0.75 / 0.625);
+}
+
 /* Estilo base y fuente del sistema tipo macOS (San Francisco / Inter) */
 :root {
   font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", "SF Pro Display", "Segoe UI", Roboto, Helvetica, Arial, sans-serif;

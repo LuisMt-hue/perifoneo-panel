@@ -1,5 +1,5 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query';
-import type { TraccarDevice } from '../../live/types';
+import type { TraccarDevice, TraccarGroup } from '../../live/types';
 import type { CreateDevicePayload } from '../types';
 import {
   crearDispositivoTraccar,
@@ -8,7 +8,15 @@ import {
   actualizarCampoOAtributo,
   propagarAtributoEnLote,
 } from '../api';
-import { TRACCAR_DEVICES_QUERY_KEY } from '../../shared/hooks/useTraccarCatalogQueries';
+import {
+  crearGrupoTraccar,
+  renombrarGrupoTraccar,
+  eliminarGrupoTraccar,
+} from '../../shared/services/traccarCatalog';
+import {
+  TRACCAR_DEVICES_QUERY_KEY,
+  TRACCAR_GROUPS_QUERY_KEY,
+} from '../../shared/hooks/useTraccarCatalogQueries';
 
 /**
  * Mutations CRUD del módulo Devices: en vez de mantener estado local (`setDevices`) y
@@ -100,6 +108,81 @@ export function useBulkEditFieldMutation() {
 }
 
 /**
+ * CRUD de "Base": no es una entidad nativa de Traccar, así que renombrar/eliminar
+ * opera en lote sobre todos los dispositivos que actualmente tengan ese valor
+ * (decisión ya tomada: la lista de bases se deriva solo de los dispositivos existentes,
+ * no hay una lista independiente — "crear" una base nueva ocurre al asignarla a un
+ * dispositivo desde el combobox, no desde este modal de gestión).
+ */
+export interface RenameBaseParams {
+  valorActual: string;
+  nuevoValor: string; // '' para eliminar el atributo en todos los dispositivos que lo tenían
+  onProgress?: (actual: number, total: number) => void;
+}
+
+export function useRenameBaseMutation() {
+  const queryClient = useDevicesQueryClient();
+  return useMutation({
+    mutationFn: ({ valorActual, nuevoValor, onProgress }: RenameBaseParams) => {
+      const devices = queryClient.getQueryData<TraccarDevice[]>(TRACCAR_DEVICES_QUERY_KEY) || [];
+      const targetIds = devices
+        .filter((d) => String(d.attributes?.base || '').trim() === valorActual)
+        .map((d) => d.id);
+      return propagarAtributoEnLote(devices, targetIds, 'base', nuevoValor || null, onProgress, true);
+    },
+    onSuccess: ({ actualizados }) => {
+      const map = new Map(actualizados.map((a) => [a.id, a]));
+      queryClient.setQueryData<TraccarDevice[]>(TRACCAR_DEVICES_QUERY_KEY, (old = []) =>
+        old.map((d) => map.get(d.id) ?? d)
+      );
+    },
+  });
+}
+
+/**
+ * CRUD del grupo nativo de Traccar. Crear/renombrar/eliminar afecta la entidad real
+ * en Traccar (no un atributo), por lo que solo se actualiza la cache de ['traccarGroups'];
+ * los dispositivos que quedan sin grupo tras un delete se resuelven al refetch de devices.
+ */
+export function useCreateGroupMutation() {
+  const queryClient = useDevicesQueryClient();
+  return useMutation({
+    mutationFn: (name: string) => crearGrupoTraccar(name),
+    onSuccess: (nuevo) => {
+      queryClient.setQueryData<TraccarGroup[]>(TRACCAR_GROUPS_QUERY_KEY, (old = []) => [...old, nuevo]);
+    },
+  });
+}
+
+export function useRenameGroupMutation() {
+  const queryClient = useDevicesQueryClient();
+  return useMutation({
+    mutationFn: ({ grupo, nuevoNombre }: { grupo: TraccarGroup; nuevoNombre: string }) =>
+      renombrarGrupoTraccar(grupo, nuevoNombre),
+    onSuccess: (actualizado) => {
+      queryClient.setQueryData<TraccarGroup[]>(TRACCAR_GROUPS_QUERY_KEY, (old = []) =>
+        old.map((g) => (g.id === actualizado.id ? actualizado : g))
+      );
+    },
+  });
+}
+
+export function useDeleteGroupMutation() {
+  const queryClient = useDevicesQueryClient();
+  return useMutation({
+    mutationFn: (id: number) => eliminarGrupoTraccar(id),
+    onSuccess: (_result, id) => {
+      queryClient.setQueryData<TraccarGroup[]>(TRACCAR_GROUPS_QUERY_KEY, (old = []) =>
+        old.filter((g) => g.id !== id)
+      );
+      // Los dispositivos que tenían este grupo quedan con un groupId huérfano hasta
+      // el próximo fetch; se invalida para que se reflejen como "Sin grupo".
+      queryClient.invalidateQueries({ queryKey: TRACCAR_DEVICES_QUERY_KEY });
+    },
+  });
+}
+
+/**
  * Agrupa todas las mutations en un solo objeto, para componer fácilmente en useDevicesManager.
  */
 export function useDeviceMutations() {
@@ -108,6 +191,20 @@ export function useDeviceMutations() {
   const updateField = useUpdateDeviceFieldMutation();
   const remove = useDeleteDeviceMutation();
   const bulkEditField = useBulkEditFieldMutation();
+  const renameBase = useRenameBaseMutation();
+  const createGroup = useCreateGroupMutation();
+  const renameGroup = useRenameGroupMutation();
+  const deleteGroup = useDeleteGroupMutation();
 
-  return { create, update, updateField, remove, bulkEditField };
+  return {
+    create,
+    update,
+    updateField,
+    remove,
+    bulkEditField,
+    renameBase,
+    createGroup,
+    renameGroup,
+    deleteGroup,
+  };
 }

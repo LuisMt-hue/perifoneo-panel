@@ -1,6 +1,7 @@
-import React, { useState } from 'react';
+import React, { useMemo, useState } from 'react';
 import { X, Check, Loader2, Layers } from 'lucide-react';
 import type { TraccarGeofence, TraccarGroup } from '../../live/types';
+import SearchSelectCombobox from '../../shared/components/ui/SearchSelectCombobox';
 
 type CampoEditable = 'base' | 'sector' | 'groupId';
 
@@ -12,6 +13,7 @@ interface BulkEditModalProps {
   progreso: { actual: number; total: number } | null;
   geofences: TraccarGeofence[];
   groups: TraccarGroup[];
+  basesConocidas: string[];
 }
 
 const CAMPOS: Array<{ value: CampoEditable; label: string }> = [
@@ -28,10 +30,15 @@ export const BulkEditModal: React.FC<BulkEditModalProps> = ({
   progreso,
   geofences,
   groups,
+  basesConocidas,
 }) => {
   const [campo, setCampo] = useState<CampoEditable>('base');
   const [valor, setValor] = useState('');
   const [errorLocal, setErrorLocal] = useState<string | null>(null);
+
+  const opcionesGrupo = useMemo(() => groups.map((g) => ({ value: String(g.id), label: g.name })), [groups]);
+  const opcionesSector = useMemo(() => geofences.map((g) => ({ value: g.name, label: g.name })), [geofences]);
+  const opcionesBase = useMemo(() => basesConocidas.map((b) => ({ value: b, label: b })), [basesConocidas]);
 
   if (!isOpen) return null;
 
@@ -111,46 +118,39 @@ export const BulkEditModal: React.FC<BulkEditModalProps> = ({
             </label>
 
             {campo === 'base' && (
-              <input
-                type="text"
-                disabled={isExecuting}
+              <SearchSelectCombobox
+                options={opcionesBase}
                 value={valor}
-                onChange={(e) => setValor(e.target.value)}
-                placeholder="Ej: Base Sur (vacío para borrar)"
-                className="w-full h-10 px-3.5 text-sm bg-zinc-50 dark:bg-zinc-800 border border-zinc-200/80 dark:border-zinc-700 rounded-xl text-zinc-900 dark:text-zinc-100 focus:outline-none focus:ring-2 focus:ring-[#155BD0]/20 focus:border-[#155BD0]"
+                onChange={setValor}
+                placeholder="Buscar o escribir una base..."
+                emptyOptionLabel="Sin base (borra el atributo)"
+                allowCustomValue
+                disabled={isExecuting}
               />
             )}
 
             {campo === 'sector' && (
-              <select
+              <SearchSelectCombobox
+                options={opcionesSector}
                 value={valor}
+                onChange={setValor}
+                placeholder="Buscar sector..."
+                emptyOptionLabel="Sin sector"
+                allowCustomValue={false}
                 disabled={isExecuting}
-                onChange={(e) => setValor(e.target.value)}
-                className="w-full h-10 px-3.5 text-sm bg-zinc-50 dark:bg-zinc-800 border border-zinc-200/80 dark:border-zinc-700 rounded-xl text-zinc-900 dark:text-zinc-100 focus:outline-none focus:ring-2 focus:ring-[#155BD0]/20 focus:border-[#155BD0] cursor-pointer"
-              >
-                <option value="">Sin sector</option>
-                {geofences.map((g) => (
-                  <option key={g.id} value={g.name}>
-                    {g.name}
-                  </option>
-                ))}
-              </select>
+              />
             )}
 
             {campo === 'groupId' && (
-              <select
+              <SearchSelectCombobox
+                options={opcionesGrupo}
                 value={valor}
+                onChange={setValor}
+                placeholder={opcionesGrupo.length === 0 ? 'Sin grupos en Traccar' : 'Buscar grupo...'}
+                emptyOptionLabel="Sin grupo"
+                allowCustomValue={false}
                 disabled={isExecuting}
-                onChange={(e) => setValor(e.target.value)}
-                className="w-full h-10 px-3.5 text-sm bg-zinc-50 dark:bg-zinc-800 border border-zinc-200/80 dark:border-zinc-700 rounded-xl text-zinc-900 dark:text-zinc-100 focus:outline-none focus:ring-2 focus:ring-[#155BD0]/20 focus:border-[#155BD0] cursor-pointer"
-              >
-                <option value="">Sin grupo</option>
-                {groups.map((g) => (
-                  <option key={g.id} value={g.id}>
-                    {g.name}
-                  </option>
-                ))}
-              </select>
+              />
             )}
           </div>
 

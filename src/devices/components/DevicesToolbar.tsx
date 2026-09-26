@@ -1,5 +1,5 @@
 import React from 'react';
-import { Search, X, Plus, CheckCircle2, PauseCircle, WifiOff, EyeOff, Eye } from 'lucide-react';
+import { Search, X, Plus, CheckCircle2, PauseCircle, WifiOff, EyeOff, Eye, Settings2 } from 'lucide-react';
 import type { DeviceFilterState } from '../types';
 
 interface DevicesToolbarProps {
@@ -13,6 +13,7 @@ interface DevicesToolbarProps {
     deshabilitados: number;
   };
   onOpenCreateDevice: () => void;
+  onOpenManageLists: () => void;
 }
 
 export const DevicesToolbar: React.FC<DevicesToolbarProps> = ({
@@ -20,6 +21,7 @@ export const DevicesToolbar: React.FC<DevicesToolbarProps> = ({
   onFilterChange,
   counts,
   onOpenCreateDevice,
+  onOpenManageLists,
 }) => {
   const handleSearchChange = (val: string) => onFilterChange({ ...filters, search: val });
   const handleEstadoChange = (estadoFiltro: DeviceFilterState['estadoFiltro']) =>
@@ -41,7 +43,7 @@ export const DevicesToolbar: React.FC<DevicesToolbarProps> = ({
             value={filters.search}
             onChange={(e) => handleSearchChange(e.target.value)}
             placeholder="Buscar por nombre, DNI, celular, grupo, base, sector..."
-            className="w-full h-10 pl-10 pr-9 text-sm bg-zinc-100/90 dark:bg-zinc-800/90 border border-zinc-200/80 dark:border-zinc-700/80 rounded-xl text-zinc-900 dark:text-zinc-100 placeholder-zinc-400 focus:outline-none focus:ring-2 focus:ring-[#155BD0]/20 focus:border-[#155BD0] transition-all"
+            className="w-full h-10 pl-10 pr-9 text-[13px] bg-zinc-100/90 dark:bg-zinc-800/90 border border-zinc-200/80 dark:border-zinc-700/80 rounded-xl text-zinc-900 dark:text-zinc-100 placeholder-zinc-400 focus:outline-none focus:ring-2 focus:ring-[#155BD0]/20 focus:border-[#155BD0] transition-all"
           />
           {filters.search && (
             <button
@@ -54,15 +56,27 @@ export const DevicesToolbar: React.FC<DevicesToolbarProps> = ({
           )}
         </div>
 
-        <button
-          type="button"
-          onClick={onOpenCreateDevice}
-          className="h-10 px-4 rounded-xl bg-[#155BD0] hover:bg-[#114eb3] text-white text-sm font-semibold shadow-sm transition-all hover:scale-[1.01] active:scale-[0.99] flex items-center gap-2 cursor-pointer shrink-0"
-          title="Registrar un nuevo perifoneador en Traccar"
-        >
-          <Plus size={16} />
-          <span>Nuevo Dispositivo</span>
-        </button>
+        <div className="flex items-center gap-2 shrink-0">
+          <button
+            type="button"
+            onClick={onOpenManageLists}
+            className="h-10 px-3.5 rounded-xl bg-zinc-100 hover:bg-zinc-200 dark:bg-zinc-800 dark:hover:bg-zinc-700 text-zinc-700 dark:text-zinc-300 text-[13px] font-semibold shadow-2xs transition-all flex items-center gap-2 cursor-pointer border border-zinc-200/80 dark:border-zinc-700"
+            title="Gestionar grupos y bases"
+          >
+            <Settings2 size={15} />
+            <span className="hidden sm:inline">Grupos y Bases</span>
+          </button>
+
+          <button
+            type="button"
+            onClick={onOpenCreateDevice}
+            className="h-10 px-4 rounded-xl bg-[#155BD0] hover:bg-[#114eb3] text-white text-[13px] font-semibold shadow-sm transition-all hover:scale-[1.01] active:scale-[0.99] flex items-center gap-2 cursor-pointer"
+            title="Registrar un nuevo perifoneador en Traccar"
+          >
+            <Plus size={16} />
+            <span>Nuevo Dispositivo</span>
+          </button>
+        </div>
       </div>
 
       {/* Fila Inferior: Filtros de Estado (mismos 3 niveles que Live) */}

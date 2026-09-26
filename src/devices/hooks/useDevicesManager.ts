@@ -1,6 +1,6 @@
 import { useCallback, useState } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
-import type { TraccarDevice } from '../../live/types';
+import type { TraccarDevice, TraccarGroup } from '../../live/types';
 import type { CreateDevicePayload } from '../types';
 import { useDevicesQuery } from './useDevicesQuery';
 import { useDevicesGeofencesQuery } from './useDevicesGeofencesQuery';
@@ -46,10 +46,8 @@ export function useDevicesManager() {
   const selection = useDevicesSelection(paginated);
   const mutations = useDeviceMutations();
 
-  const [savingCell, setSavingCell] = useState<{ deviceId: number; key: string } | null>(null);
-  const [successCell, setSuccessCell] = useState<{ deviceId: number; key: string } | null>(null);
-  const [errorInline, setErrorInline] = useState<string | null>(null);
   const [progresoLote, setProgresoLote] = useState<{ actual: number; total: number } | null>(null);
+  const [progresoBase, setProgresoBase] = useState<{ actual: number; total: number } | null>(null);
 
   const cargando = devicesQuery.isLoading || geofencesQuery.isLoading || groupsQuery.isLoading;
   const error = devicesQuery.error instanceof Error ? devicesQuery.error.message : null;
@@ -62,27 +60,6 @@ export function useDevicesManager() {
       queryClient.invalidateQueries({ queryKey: DEVICES_POSITIONS_QUERY_KEY }),
     ]);
   }, [queryClient]);
-
-  const guardarEdicionInline = useCallback(
-    async (deviceId: number, key: string, value: any, isAttribute: boolean) => {
-      const dev = (devicesQuery.data || []).find((d) => d.id === deviceId);
-      if (!dev) return;
-
-      setSavingCell({ deviceId, key });
-      setErrorInline(null);
-      try {
-        await mutations.updateField.mutateAsync({ device: dev, key, value, isAttribute });
-        setSuccessCell({ deviceId, key });
-        setTimeout(() => setSuccessCell(null), 1500);
-      } catch (err: any) {
-        console.error('[useDevicesManager] Error guardando celda inline:', err);
-        setErrorInline(err.message || 'Error al guardar el cambio.');
-      } finally {
-        setSavingCell(null);
-      }
-    },
-    [devicesQuery.data, mutations.updateField]
-  );
 
   const crearNuevoDispositivo = useCallback(
     (payload: CreateDevicePayload) => mutations.create.mutateAsync(payload),
@@ -117,6 +94,36 @@ export function useDevicesManager() {
     [mutations.bulkEditField]
   );
 
+  const crearGrupo = useCallback((name: string) => mutations.createGroup.mutateAsync(name), [mutations.createGroup]);
+
+  const renombrarGrupo = useCallback(
+    (grupo: TraccarGroup, nuevoNombre: string) => mutations.renameGroup.mutateAsync({ grupo, nuevoNombre }),
+    [mutations.renameGroup]
+  );
+
+  const eliminarGrupo = useCallback((id: number) => mutations.deleteGroup.mutateAsync(id), [mutations.deleteGroup]);
+
+  const renombrarBase = useCallback(
+    async (valorActual: string, nuevoValor: string) => {
+      const targetCount = enriched.filter(
+        (d) => String(d.attributes?.base || '').trim() === valorActual
+      ).length;
+      setProgresoBase({ actual: 0, total: targetCount });
+      try {
+        await mutations.renameBase.mutateAsync({
+          valorActual,
+          nuevoValor,
+          onProgress: (actual, total) => setProgresoBase({ actual, total }),
+        });
+      } finally {
+        setProgresoBase(null);
+      }
+    },
+    [enriched, mutations.renameBase]
+  );
+
+  const eliminarBase = useCallback((valorActual: string) => renombrarBase(valorActual, ''), [renombrarBase]);
+
   return {
     devices: enriched,
     filteredDevices,
@@ -130,11 +137,6 @@ export function useDevicesManager() {
     geofences: geofencesQuery.data || [],
     groups: groupsQuery.data || [],
     ...selection,
-    savingCell,
-    successCell,
-    errorInline,
-    setErrorInline,
-    guardarEdicionInline,
     crearNuevoDispositivo,
     creandoDispositivo: mutations.create.isPending,
     guardarDispositivoCompleto,
@@ -143,6 +145,12 @@ export function useDevicesManager() {
     eliminandoDispositivo: mutations.remove.isPending,
     bulkEditarCampo,
     progresoLote,
+    crearGrupo,
+    renombrarGrupo,
+    eliminarGrupo,
+    renombrarBase,
+    eliminarBase,
+    progresoBase,
     sortConfig,
     onSortChange,
     paginaActual,

@@ -4,7 +4,6 @@ import {
   LogOut,
   Map,
   History,
-  BarChart3,
   Menu,
   X,
   Activity,
@@ -79,11 +78,6 @@ export const Header: React.FC = () => {
           <History size={14} />
           <span>Historial</span>
         </NavLink>
-
-        <NavLink to="/reportes" className={getSegmentClass}>
-          <BarChart3 size={14} />
-          <span>Reportes</span>
-        </NavLink>
       </nav>
 
       {/* Lado Derecho: Botón Salir sólido (sin nombres ni menús desplegables) */}
@@ -156,21 +150,6 @@ export const Header: React.FC = () => {
           >
             <History size={16} />
             <span>Historial de Recorridos</span>
-          </NavLink>
-
-          <NavLink
-            to="/reportes"
-            onClick={() => setMenuMovilAbierto(false)}
-            className={({ isActive }) =>
-              `flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium transition-colors ${
-                isActive
-                  ? 'bg-blue-600 text-white font-semibold shadow-xs'
-                  : 'text-zinc-700 hover:bg-zinc-100'
-              }`
-            }
-          >
-            <BarChart3 size={16} />
-            <span>Reportes Consolidados</span>
           </NavLink>
 
           <div className="pt-2 border-t border-zinc-100">

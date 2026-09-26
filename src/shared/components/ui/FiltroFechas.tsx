@@ -25,7 +25,7 @@ function fechaISO(date: Date): string {
  *
  * Botón único con popover: atajos rápidos (Hoy, Ayer, Esta semana, Este mes)
  * arriba y el rango personalizado abajo. Mismo contrato de props que la versión
- * anterior, así que no afecta a otros consumidores (ej. `src/reports/ReportesPage.tsx`).
+ * anterior, así que no afecta a otros consumidores existentes del componente.
  */
 export const FiltroFechas: React.FC<FiltroFechasProps> = ({
   desde: propDesde,
