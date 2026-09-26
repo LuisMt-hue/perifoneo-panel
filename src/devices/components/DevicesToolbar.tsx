@@ -1,6 +1,7 @@
 import React from 'react';
-import { Search, X, Plus, CheckCircle2, PauseCircle, WifiOff, EyeOff, Eye, Settings2 } from 'lucide-react';
+import { Search, X, Plus, ListFilter, CheckCircle2, PauseCircle, WifiOff, EyeOff, Eye, Settings2 } from 'lucide-react';
 import type { DeviceFilterState } from '../types';
+import MobileFilterSheet from '../../shared/components/ui/MobileFilterSheet';
 
 interface DevicesToolbarProps {
   filters: DeviceFilterState;
@@ -29,11 +30,16 @@ export const DevicesToolbar: React.FC<DevicesToolbarProps> = ({
   const handleToggleDeshabilitados = () =>
     onFilterChange({ ...filters, soloDeshabilitados: !filters.soloDeshabilitados });
 
+  const activeSheetFilterCount = [
+    filters.estadoFiltro !== 'TODOS',
+    filters.soloDeshabilitados,
+  ].filter(Boolean).length;
+
   return (
     <div className="flex flex-col gap-3.5 p-4 sm:p-5 bg-white dark:bg-zinc-900 border-b border-zinc-200/80 dark:border-zinc-800 shrink-0">
-      {/* Fila Superior: Buscador y Alta de Dispositivo */}
-      <div className="flex items-center justify-between gap-3 flex-wrap lg:flex-nowrap">
-        <div className="relative w-full lg:w-96">
+      {/* Fila Superior: Buscador y Alta de Dispositivo — una sola fila también en mobile */}
+      <div className="flex items-center gap-2 sm:gap-3">
+        <div className="relative flex-1 min-w-0 lg:flex-none lg:w-96">
           <Search
             size={16}
             className="absolute left-3.5 top-1/2 -translate-y-1/2 text-zinc-400 pointer-events-none"
@@ -70,17 +76,91 @@ export const DevicesToolbar: React.FC<DevicesToolbarProps> = ({
           <button
             type="button"
             onClick={onOpenCreateDevice}
-            className="h-10 px-4 rounded-xl bg-[#155BD0] hover:bg-[#114eb3] text-white text-[13px] font-semibold shadow-sm transition-all hover:scale-[1.01] active:scale-[0.99] flex items-center gap-2 cursor-pointer"
+            className="h-10 px-3.5 sm:px-4 rounded-xl bg-[#155BD0] hover:bg-[#114eb3] text-white text-[13px] font-semibold shadow-sm transition-all hover:scale-[1.01] active:scale-[0.99] flex items-center gap-2 cursor-pointer"
             title="Registrar un nuevo perifoneador en Traccar"
           >
             <Plus size={16} />
-            <span>Nuevo Dispositivo</span>
+            <span className="hidden sm:inline">Nuevo Dispositivo</span>
           </button>
         </div>
       </div>
 
       {/* Fila Inferior: Filtros de Estado (mismos 3 niveles que Live) */}
       <div className="flex items-center justify-between gap-3 flex-wrap pt-1">
+        <MobileFilterSheet activeCount={activeSheetFilterCount} className="lg:hidden">
+          <div>
+            <label className="block text-[11px] font-semibold uppercase tracking-wider text-zinc-500 dark:text-zinc-400 mb-1.5">
+              Estado
+            </label>
+            <div className="flex items-center h-9 p-0.5 rounded-xl bg-zinc-100 dark:bg-zinc-800 border border-zinc-200/50 dark:border-white/[0.04] text-[12px] font-medium gap-0.5">
+              <button
+                type="button"
+                onClick={() => handleEstadoChange('TODOS')}
+                className={`flex-1 h-full px-2.5 rounded-lg transition-all flex items-center justify-center gap-1.5 cursor-pointer ${
+                  filters.estadoFiltro === 'TODOS'
+                    ? 'bg-white dark:bg-zinc-900 text-zinc-900 dark:text-zinc-100 shadow-xs font-semibold'
+                    : 'text-zinc-500 dark:text-zinc-400 hover:text-zinc-800 dark:hover:text-zinc-200'
+                }`}
+              >
+                <ListFilter size={12} />
+                <span>Todos</span>
+                <span className="text-[10px] font-mono px-1.5 py-0.5 rounded-md bg-zinc-200/60 dark:bg-zinc-700/60 text-zinc-700 dark:text-zinc-300 tabular-nums">
+                  {counts.total}
+                </span>
+              </button>
+              <button
+                type="button"
+                onClick={() => handleEstadoChange('ACTIVO')}
+                className={`flex-1 h-full flex items-center justify-center gap-1.5 px-2.5 rounded-lg transition-all cursor-pointer ${
+                  filters.estadoFiltro === 'ACTIVO'
+                    ? 'bg-emerald-600 text-white shadow-xs font-semibold'
+                    : 'text-zinc-600 dark:text-zinc-400 hover:bg-zinc-200/60 dark:hover:bg-zinc-700/60'
+                }`}
+              >
+                <CheckCircle2 size={12} className={filters.estadoFiltro === 'ACTIVO' ? 'text-white' : 'text-emerald-600'} />
+                <span className="font-mono tabular-nums">{counts.activos}</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => handleEstadoChange('DETENIDO')}
+                className={`flex-1 h-full flex items-center justify-center gap-1.5 px-2.5 rounded-lg transition-all cursor-pointer ${
+                  filters.estadoFiltro === 'DETENIDO'
+                    ? 'bg-amber-500 text-white shadow-xs font-semibold'
+                    : 'text-zinc-600 dark:text-zinc-400 hover:bg-zinc-200/60 dark:hover:bg-zinc-700/60'
+                }`}
+              >
+                <PauseCircle size={12} className={filters.estadoFiltro === 'DETENIDO' ? 'text-white' : 'text-amber-500'} />
+                <span className="font-mono tabular-nums">{counts.detenidos}</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => handleEstadoChange('DESCONECTADO')}
+                className={`flex-1 h-full flex items-center justify-center gap-1.5 px-2.5 rounded-lg transition-all cursor-pointer ${
+                  filters.estadoFiltro === 'DESCONECTADO'
+                    ? 'bg-zinc-700 text-white shadow-xs font-semibold'
+                    : 'text-zinc-600 dark:text-zinc-400 hover:bg-zinc-200/60 dark:hover:bg-zinc-700/60'
+                }`}
+              >
+                <WifiOff size={12} className={filters.estadoFiltro === 'DESCONECTADO' ? 'text-white' : 'text-zinc-500'} />
+                <span className="font-mono tabular-nums">{counts.desconectados}</span>
+              </button>
+            </div>
+          </div>
+
+          <button
+            type="button"
+            onClick={handleToggleDeshabilitados}
+            className={`flex items-center h-10 gap-2 px-3.5 rounded-xl text-[13px] font-semibold transition-all cursor-pointer ${
+              filters.soloDeshabilitados
+                ? 'bg-rose-600 hover:bg-rose-700 text-white shadow-xs'
+                : 'bg-zinc-100 hover:bg-zinc-200 dark:bg-zinc-800 dark:hover:bg-zinc-700 text-zinc-600 dark:text-zinc-300 border border-zinc-200/80 dark:border-zinc-700'
+            }`}
+          >
+            {filters.soloDeshabilitados ? <EyeOff size={14} /> : <Eye size={14} />}
+            <span>Deshabilitados ({counts.deshabilitados})</span>
+          </button>
+        </MobileFilterSheet>
+
         <div className="hidden lg:flex items-center h-8 p-0.5 rounded-xl bg-zinc-100/90 dark:bg-zinc-800/80 border border-zinc-200/50 dark:border-white/[0.04] text-[11px] font-medium shrink-0 gap-0.5">
           <button
             type="button"
@@ -91,6 +171,7 @@ export const DevicesToolbar: React.FC<DevicesToolbarProps> = ({
                 : 'text-zinc-500 dark:text-zinc-400 hover:text-zinc-800 dark:hover:text-zinc-200'
             }`}
           >
+            <ListFilter size={11} />
             <span>Todos</span>
             <span className="text-[10px] font-mono px-1.5 py-0.5 rounded-md bg-zinc-200/60 dark:bg-zinc-700/60 text-zinc-700 dark:text-zinc-300 tabular-nums">
               {counts.total}
@@ -140,7 +221,7 @@ export const DevicesToolbar: React.FC<DevicesToolbarProps> = ({
         <button
           type="button"
           onClick={handleToggleDeshabilitados}
-          className={`flex items-center h-8 gap-1.5 px-2.5 rounded-xl text-[11px] font-semibold transition-all shrink-0 cursor-pointer ml-auto ${
+          className={`hidden lg:flex items-center h-8 gap-1.5 px-2.5 rounded-xl text-[11px] font-semibold transition-all shrink-0 cursor-pointer ml-auto ${
             filters.soloDeshabilitados
               ? 'bg-rose-600 hover:bg-rose-700 text-white shadow-xs'
               : 'bg-zinc-100 hover:bg-zinc-200 dark:bg-zinc-800 dark:hover:bg-zinc-700 text-zinc-600 dark:text-zinc-300 border border-zinc-200/80 dark:border-zinc-700'

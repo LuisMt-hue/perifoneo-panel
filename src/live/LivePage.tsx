@@ -98,6 +98,9 @@ export const LivePage: React.FC = () => {
       )}
 
       {/* Alternador Flotante Inferior para Móviles (macOS/iOS Segment Control) */}
+      {/* Se oculta mientras hay un dispositivo seleccionado: la tarjeta de estado ya
+          cubre esa zona y su propio botón de cerrar permite volver atrás. */}
+      {!selectedDevice && (
       <div className="md:hidden absolute bottom-5 left-1/2 -translate-x-1/2 z-30 flex items-center bg-white/90 dark:bg-zinc-900/90 backdrop-blur-2xl p-1 rounded-2xl shadow-2xl border border-zinc-200/80 dark:border-white/10 select-none">
         <button
           type="button"
@@ -133,6 +136,7 @@ export const LivePage: React.FC = () => {
           </span>
         </button>
       </div>
+      )}
     </div>
   );
 };

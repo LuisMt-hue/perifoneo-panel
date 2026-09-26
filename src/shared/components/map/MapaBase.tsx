@@ -56,9 +56,13 @@ export const MapaBase: React.FC<MapaBaseProps> = ({
       style={{ zIndex: 0 }}
       scrollWheelZoom={true}
     >
+      {/* Basemap claro estilo CartoDB Positron: mucho más blanco/minimalista que el
+          OSM estándar (menos verdes/amarillos saturados), a tono con el estilo
+          macOS claro del resto de la app. */}
       <TileLayer
-        url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
-        attribution='&copy; <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noreferrer">OpenStreetMap</a> contributors'
+        url="https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png"
+        attribution='&copy; <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noreferrer">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions" target="_blank" rel="noreferrer">CARTO</a>'
+        subdomains="abcd"
         maxZoom={19}
       />
       {children}

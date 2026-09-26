@@ -61,8 +61,8 @@ export const BulkEditModal: React.FC<BulkEditModalProps> = ({
   };
 
   return (
-    <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/60 backdrop-blur-md animate-in fade-in duration-150">
-      <div className="w-full max-w-md bg-white dark:bg-zinc-900 rounded-3xl shadow-2xl p-6 overflow-hidden border border-zinc-200/80 dark:border-zinc-800 text-zinc-900 dark:text-zinc-100">
+    <div className="fixed inset-0 z-[100] flex items-end sm:items-center justify-center p-0 sm:p-4 bg-black/60 backdrop-blur-md animate-in fade-in duration-150">
+      <div className="w-full sm:max-w-md bg-white dark:bg-zinc-900 rounded-t-3xl sm:rounded-3xl shadow-2xl p-6 overflow-hidden border border-zinc-200/80 dark:border-zinc-800 text-zinc-900 dark:text-zinc-100 max-h-[85vh] sm:max-h-none overflow-y-auto animate-in slide-in-from-bottom-4 sm:zoom-in-95 duration-150">
         <div className="flex items-center justify-between pb-4 border-b border-zinc-100 dark:border-zinc-800">
           <div className="flex items-center gap-2.5">
             <div className="w-8 h-8 rounded-xl bg-purple-600/10 text-purple-600 dark:text-purple-400 flex items-center justify-center">
@@ -179,9 +179,10 @@ export const BulkEditModal: React.FC<BulkEditModalProps> = ({
               type="button"
               disabled={isExecuting}
               onClick={onClose}
-              className="h-10 px-4 text-sm font-semibold rounded-xl text-zinc-600 dark:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-colors cursor-pointer"
+              className="h-10 flex items-center gap-1.5 px-4 text-sm font-semibold rounded-xl text-zinc-600 dark:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-colors cursor-pointer"
             >
-              Cancelar
+              <X size={14} />
+              <span>Cancelar</span>
             </button>
             <button
               type="submit"

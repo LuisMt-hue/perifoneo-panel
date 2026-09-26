@@ -59,7 +59,7 @@ export const BotonExportarHistorial: React.FC<BotonExportarHistorialProps> = ({
         type="button"
         onClick={() => setAbierto((prev) => !prev)}
         disabled={deshabilitado}
-        className={`flex items-center gap-1.5 px-3.5 py-2 text-xs font-semibold rounded-[21px] shadow-xs transition-all cursor-pointer focus:outline-none focus:ring-2 focus:ring-[#155BD0]/30 select-none ${
+        className={`flex items-center justify-center gap-1.5 h-9 px-3.5 text-xs font-semibold rounded-[21px] shadow-xs transition-all cursor-pointer focus:outline-none focus:ring-2 focus:ring-[#155BD0]/30 select-none ${
           abierto
             ? 'bg-zinc-900 text-white dark:bg-zinc-100 dark:text-zinc-900'
             : 'bg-zinc-800 hover:bg-zinc-900 active:bg-black text-white dark:bg-zinc-800 dark:hover:bg-zinc-700'
@@ -68,7 +68,7 @@ export const BotonExportarHistorial: React.FC<BotonExportarHistorialProps> = ({
         aria-expanded={abierto}
       >
         <Download size={13} className="shrink-0" />
-        <span>Exportar</span>
+        <span className="hidden sm:inline">Exportar</span>
         <ChevronDown
           size={12}
           className={`shrink-0 opacity-70 transition-transform duration-200 ${

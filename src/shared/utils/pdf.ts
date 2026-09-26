@@ -1,5 +1,5 @@
 import { jsPDF } from 'jspdf';
-import 'jspdf-autotable';
+import autoTable from 'jspdf-autotable';
 import {
   formatearFecha,
   formatearHora,
@@ -116,39 +116,35 @@ export function exportarHistorialPDF(
   ]);
 
   // Renderizar tabla
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const docAny = doc as any;
-  if (typeof docAny.autoTable === 'function') {
-    docAny.autoTable({
-      startY: 44,
-      head: [
-        [
-          'Dispositivo',
-          'DNI / Doc',
-          'Placa',
-          'Sector',
-          'Inicio',
-          'Fin',
-          'Distancia',
-          'Vel. Media',
-          'Vel. Máxima',
-          'Tiempo Activo',
-          'Estado',
-        ],
+  autoTable(doc, {
+    startY: 44,
+    head: [
+      [
+        'Dispositivo',
+        'DNI / Doc',
+        'Placa',
+        'Sector',
+        'Inicio',
+        'Fin',
+        'Distancia',
+        'Vel. Media',
+        'Vel. Máxima',
+        'Tiempo Activo',
+        'Estado',
       ],
-      body: tableData,
-      theme: 'grid',
-      styles: { fontSize: 8, cellPadding: 2 },
-      headStyles: { fillColor: [21, 91, 208], textColor: [255, 255, 255], fontStyle: 'bold' },
-      footStyles: { fillColor: [240, 243, 246], textColor: [20, 20, 20], fontStyle: 'bold' },
-      didParseCell: (data: { row: { index: number }; cell: { styles: { fontStyle: string; fillColor?: number[] } } }) => {
-        if (data.row.index === tableData.length - 1) {
-          data.cell.styles.fontStyle = 'bold';
-          data.cell.styles.fillColor = [235, 240, 248];
-        }
-      },
-    });
-  }
+    ],
+    body: tableData,
+    theme: 'grid',
+    styles: { fontSize: 8, cellPadding: 2 },
+    headStyles: { fillColor: [21, 91, 208], textColor: [255, 255, 255], fontStyle: 'bold' },
+    footStyles: { fillColor: [240, 243, 246], textColor: [20, 20, 20], fontStyle: 'bold' },
+    didParseCell: (data) => {
+      if (data.row.index === tableData.length - 1) {
+        data.cell.styles.fontStyle = 'bold';
+        data.cell.styles.fillColor = [235, 240, 248];
+      }
+    },
+  });
 
   const safeInicio = meta.fechaInicio.replace(/[^0-9-]/g, '');
   const safeFin = meta.fechaFin.replace(/[^0-9-]/g, '');

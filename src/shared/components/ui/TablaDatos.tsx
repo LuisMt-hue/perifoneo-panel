@@ -48,6 +48,13 @@ export interface TablaDatosProps<TData> {
   /** Cantidad de registros por página por defecto */
   tamanoPaginaDefault?: number;
   className?: string;
+  /**
+   * Render opcional de tarjeta para mobile (por debajo de `sm`). Cuando se provee,
+   * sustituye la tabla (que fuerza scroll horizontal) por una lista de tarjetas —
+   * respeta el mismo orden/paginación que la tabla. Si se omite, se mantiene el
+   * comportamiento actual de scroll horizontal en pantallas angostas.
+   */
+  mobileCard?: (fila: TData) => React.ReactNode;
 }
 
 /**
@@ -75,6 +82,7 @@ export function TablaDatos<TData>({
   paginacion = true,
   tamanoPaginaDefault = DEFAULT_PAGE_SIZE,
   className = '',
+  mobileCard,
 }: TablaDatosProps<TData>): React.ReactElement {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const colDef = (columnas || columns || []) as ColumnDef<TData, any>[];
@@ -114,7 +122,40 @@ export function TablaDatos<TData>({
     <div
       className={`w-full overflow-hidden rounded-2xl border border-zinc-200/80 dark:border-zinc-800/80 bg-white dark:bg-zinc-900/90 shadow-xs transition-colors ${className}`}
     >
-      <div className="w-full overflow-x-auto">
+      {mobileCard && (
+        <div className="sm:hidden divide-y divide-zinc-100 dark:divide-zinc-800/60">
+          {estaCargando ? (
+            <div className="flex flex-col items-center justify-center gap-2 py-14 text-zinc-500 dark:text-zinc-400">
+              <Loader2 size={22} className="animate-spin text-blue-600 dark:text-blue-400" />
+              <span className="text-[12px] font-medium">Cargando registros...</span>
+            </div>
+          ) : table.getRowModel().rows.length === 0 ? (
+            <div className="flex flex-col items-center justify-center gap-2 py-12 text-zinc-400 dark:text-zinc-500">
+              <div className="w-9 h-9 rounded-full bg-zinc-100 dark:bg-zinc-800/80 flex items-center justify-center text-zinc-400 dark:text-zinc-500">
+                <SearchX size={18} />
+              </div>
+              <p className="text-[12px] font-semibold text-zinc-700 dark:text-zinc-300">
+                No se encontraron registros
+              </p>
+              <p className="text-[11px] text-zinc-400 dark:text-zinc-500">
+                Ajusta los filtros de búsqueda para consultar la información
+              </p>
+            </div>
+          ) : (
+            table.getRowModel().rows.map((row) => (
+              <div
+                key={row.id}
+                onClick={() => handleFilaClic && handleFilaClic(row.original)}
+                className={handleFilaClic ? 'cursor-pointer active:bg-blue-50/50 dark:active:bg-zinc-800/50' : ''}
+              >
+                {mobileCard(row.original)}
+              </div>
+            ))
+          )}
+        </div>
+      )}
+
+      <div className={`w-full overflow-x-auto ${mobileCard ? 'hidden sm:block' : ''}`}>
         <table className="w-full text-[12px] text-left border-collapse">
           <thead className="bg-zinc-50/90 dark:bg-zinc-950/60 backdrop-blur-sm border-b border-zinc-200/80 dark:border-zinc-800/80 text-zinc-500 dark:text-zinc-400 font-semibold text-[11px] uppercase tracking-wider select-none">
             {table.getHeaderGroups().map((headerGroup) => (

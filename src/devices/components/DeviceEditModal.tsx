@@ -101,14 +101,14 @@ export const DeviceEditModal: React.FC<DeviceEditModalProps> = ({
 
   return (
     <div
-      className="fixed inset-0 z-[100] flex items-center justify-center p-3 sm:p-4 bg-black/60 backdrop-blur-md animate-in fade-in duration-150"
+      className="fixed inset-0 z-[100] flex items-center justify-center p-0 sm:p-4 bg-black/60 backdrop-blur-md animate-in fade-in duration-150"
       role="dialog"
       aria-modal="true"
       onClick={(e) => {
         if (e.target === e.currentTarget && !saving) onClose();
       }}
     >
-      <div className="w-full max-w-lg bg-white dark:bg-zinc-900 backdrop-blur-2xl border border-zinc-200/80 dark:border-zinc-800 rounded-2xl shadow-2xl p-6 overflow-hidden max-h-[90vh] flex flex-col">
+      <div className="w-full h-full sm:h-auto sm:max-w-lg bg-white dark:bg-zinc-900 backdrop-blur-2xl border-0 sm:border border-zinc-200/80 dark:border-zinc-800 rounded-none sm:rounded-2xl shadow-2xl p-4 sm:p-6 overflow-hidden max-h-full sm:max-h-[90vh] flex flex-col">
         <div className="flex items-center justify-between pb-4 border-b border-zinc-100 dark:border-zinc-800 shrink-0">
           <div className="flex items-center gap-2.5">
             <div className="w-7 h-7 rounded-xl bg-blue-600/10 text-[#155BD0] dark:text-blue-400 flex items-center justify-center">
@@ -126,7 +126,8 @@ export const DeviceEditModal: React.FC<DeviceEditModalProps> = ({
           </button>
         </div>
 
-        <form onSubmit={handleSubmit} className="mt-4 space-y-4 overflow-y-auto flex-1 pr-1">
+        <form onSubmit={handleSubmit} className="mt-4 flex-1 min-h-0 flex flex-col">
+        <div className="flex-1 overflow-y-auto space-y-4 pr-1">
           {errorLocal && (
             <div className="p-3 rounded-xl bg-rose-50 dark:bg-rose-950/50 border border-rose-200 dark:border-rose-800 text-rose-700 dark:text-rose-300 text-[13px]">
               {errorLocal}
@@ -149,7 +150,7 @@ export const DeviceEditModal: React.FC<DeviceEditModalProps> = ({
           </div>
 
           {/* DNI + Celular: misma fila */}
-          <div className="grid grid-cols-2 gap-3">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <div>
               <label className="block text-[11px] font-semibold uppercase tracking-wider text-zinc-500 dark:text-zinc-400 mb-1.5">
                 DNI <span className="text-rose-500">*</span>
@@ -244,15 +245,17 @@ export const DeviceEditModal: React.FC<DeviceEditModalProps> = ({
               {disabled ? 'Deshabilitado' : 'Habilitado'}
             </button>
           </div>
+        </div>
 
           <div className="flex items-center justify-end gap-2.5 pt-4 border-t border-zinc-100 dark:border-zinc-800 shrink-0">
             <button
               type="button"
               disabled={saving}
               onClick={onClose}
-              className="h-9 px-4 text-[13px] font-semibold rounded-lg text-zinc-600 dark:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-colors cursor-pointer"
+              className="h-9 flex items-center gap-1.5 px-4 text-[13px] font-semibold rounded-lg text-zinc-600 dark:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-colors cursor-pointer"
             >
-              Cancelar
+              <X size={14} />
+              <span>Cancelar</span>
             </button>
             <button
               type="submit"

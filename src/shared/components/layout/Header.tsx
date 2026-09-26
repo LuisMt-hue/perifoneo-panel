@@ -1,14 +1,6 @@
-import React, { useState } from 'react';
+import React from 'react';
 import { NavLink } from 'react-router-dom';
-import {
-  LogOut,
-  Map,
-  History,
-  Menu,
-  X,
-  Activity,
-  Smartphone,
-} from 'lucide-react';
+import { LogOut, Map, History, Activity, Smartphone } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 
 /**
@@ -16,10 +8,11 @@ import { useAuth } from '../../context/AuthContext';
  *
  * Controles de semáforo macOS, controles segmentados de navegación
  * y botón directo sólido para cerrar sesión (sin nombres ni menús desplegables).
+ * La navegación móvil vive en `MobileTabBar` (tab bar inferior estilo iOS),
+ * así que aquí solo queda el logo y un acceso directo a "Salir".
  */
 export const Header: React.FC = () => {
   const { logout } = useAuth();
-  const [menuMovilAbierto, setMenuMovilAbierto] = useState(false);
 
   const getSegmentClass = ({ isActive }: { isActive: boolean }) =>
     `px-3 py-1.5 rounded-lg text-xs font-medium transition-all flex items-center gap-1.5 ${
@@ -92,81 +85,17 @@ export const Header: React.FC = () => {
           <span>Salir</span>
         </button>
 
-        {/* Botón Menú Móvil */}
+        {/* En móvil la navegación vive en la tab bar inferior; aquí solo el salir directo */}
         <button
           type="button"
-          onClick={() => setMenuMovilAbierto(!menuMovilAbierto)}
-          className="md:hidden w-8 h-8 rounded-lg flex items-center justify-center text-zinc-700 hover:bg-zinc-100 border border-zinc-200/60 transition-colors cursor-pointer"
-          aria-label="Menú móvil"
+          onClick={logout}
+          className="md:hidden w-8 h-8 rounded-lg flex items-center justify-center text-rose-600 hover:bg-rose-50 border border-rose-200/60 transition-colors cursor-pointer"
+          title="Cerrar sesión"
+          aria-label="Cerrar sesión"
         >
-          {menuMovilAbierto ? <X size={17} /> : <Menu size={17} />}
+          <LogOut size={16} />
         </button>
       </div>
-
-      {/* Menú Desplegable Móvil tipo Sheet macOS */}
-      {menuMovilAbierto && (
-        <div className="md:hidden absolute top-14 left-0 w-full z-50 bg-white/95 backdrop-blur-2xl border-b border-zinc-200/80 px-4 py-3 shadow-xl flex flex-col gap-2 animate-in fade-in slide-in-from-top-2 duration-150">
-          <NavLink
-            to="/"
-            end
-            onClick={() => setMenuMovilAbierto(false)}
-            className={({ isActive }) =>
-              `flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium transition-colors ${
-                isActive
-                  ? 'bg-blue-600 text-white font-semibold shadow-xs'
-                  : 'text-zinc-700 hover:bg-zinc-100'
-              }`
-            }
-          >
-            <Map size={16} />
-            <span>En vivo</span>
-          </NavLink>
-
-          <NavLink
-            to="/devices"
-            onClick={() => setMenuMovilAbierto(false)}
-            className={({ isActive }) =>
-              `flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium transition-colors ${
-                isActive
-                  ? 'bg-blue-600 text-white font-semibold shadow-xs'
-                  : 'text-zinc-700 hover:bg-zinc-100'
-              }`
-            }
-          >
-            <Smartphone size={16} />
-            <span>Dispositivos</span>
-          </NavLink>
-
-          <NavLink
-            to="/historial"
-            onClick={() => setMenuMovilAbierto(false)}
-            className={({ isActive }) =>
-              `flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium transition-colors ${
-                isActive
-                  ? 'bg-blue-600 text-white font-semibold shadow-xs'
-                  : 'text-zinc-700 hover:bg-zinc-100'
-              }`
-            }
-          >
-            <History size={16} />
-            <span>Historial de Recorridos</span>
-          </NavLink>
-
-          <div className="pt-2 border-t border-zinc-100">
-            <button
-              type="button"
-              onClick={() => {
-                setMenuMovilAbierto(false);
-                logout();
-              }}
-              className="flex items-center justify-center gap-2 w-full px-3.5 py-2.5 rounded-xl text-xs font-semibold bg-rose-600 hover:bg-rose-700 active:bg-rose-800 text-white shadow-xs transition-colors cursor-pointer"
-            >
-              <LogOut size={15} />
-              <span>Salir</span>
-            </button>
-          </div>
-        </div>
-      )}
     </header>
   );
 };

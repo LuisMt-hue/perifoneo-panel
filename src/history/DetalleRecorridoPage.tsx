@@ -14,9 +14,9 @@ import type { TraccarReportTrip } from './api';
 
 /**
  * Detalle de Recorrido: sidebar con los viajes (trips) del rango seleccionado en la
- * tabla de Historial, mapa que dibuja el viaje elegido (con fitBounds automático),
- * resumen mínimo (tiempo total + km totales del rango) y el reproductor punto-a-punto,
- * que solo carga datos de Traccar cuando se elige un viaje concreto.
+ * tabla de Historial, como tarjetas de selección múltiple. Sin ninguna marcada se ve
+ * el recorrido completo del rango; al marcar una o más, el mapa, el resumen (tiempo +
+ * km) y el reproductor punto-a-punto se acotan a la combinación de esos viajes.
  *
  * Todo el contenido cabe en una sola pantalla (sin scroll de página): el `<main>` de
  * `MainLayout` ya está acotado a `100vh - header`, así que aquí se reparte ese alto
@@ -43,30 +43,39 @@ export const DetalleRecorridoPage: React.FC = () => {
   const { dispositivo, sectorInfo, sectoresFondo, trips, fromISO, toISO, cargandoTrips, cargandoCatalogos } =
     useDetalleRecorridoBase(deviceId, desde, hasta);
 
-  const { selectedTrip, selectedTripKey, selectTrip, puntos, cargandoRuta } = useViajeSeleccionado(
-    deviceId,
-    trips,
-    sectorInfo.geofenceId,
-    fromISO,
-    toISO
-  );
+  const {
+    selectedTripKeys,
+    selectedTrips,
+    toggleTrip,
+    selectAll,
+    clearSelection,
+    puntos,
+    reproductorKey,
+    cargandoRuta,
+  } = useViajeSeleccionado(deviceId, trips, sectorInfo.geofenceId, fromISO, toISO);
 
-  const handleSelectTrip = (trip: TraccarReportTrip) => {
-    selectTrip(trip);
+  const handleToggleTrip = (trip: TraccarReportTrip) => {
+    toggleTrip(trip);
     setPosicionActual(null);
   };
 
   const handleClearSelection = () => {
-    selectTrip(null);
+    clearSelection();
     setPosicionActual(null);
   };
 
-  // Resumen del rango completo: solo tiempo total y km totales (sobre todos los viajes)
+  const handleSelectAll = () => {
+    selectAll();
+    setPosicionActual(null);
+  };
+
+  // Resumen: tiempo total y km totales de los viajes seleccionados (todos, por
+  // defecto) — reacciona en vivo a cada deselección, incluyendo bajar a cero.
   const resumenRango = useMemo(() => {
-    const segundos = trips.reduce((acc, t) => acc + obtenerDuracionSegundos(t), 0);
-    const distanciaKm = trips.reduce((acc, t) => acc + (t.distance || 0), 0) / 1000;
+    const segundos = selectedTrips.reduce((acc, t) => acc + obtenerDuracionSegundos(t), 0);
+    const distanciaKm = selectedTrips.reduce((acc, t) => acc + (t.distance || 0), 0) / 1000;
     return { minutosTotales: Math.round(segundos / 60), distanciaKm };
-  }, [trips]);
+  }, [selectedTrips]);
 
   const nombreDispositivo = dispositivo?.name || `Dispositivo #${deviceId}`;
   const rangoLabel = desde === hasta ? formatearFecha(desde) : `${formatearFecha(desde)} – ${formatearFecha(hasta)}`;
@@ -122,7 +131,9 @@ export const DetalleRecorridoPage: React.FC = () => {
             <button
               type="button"
               disabled={puntos.length === 0}
-              onClick={() => exportarGPX(puntos, `${nombreDispositivo}_${selectedTrip?.startTime || ''}`)}
+              onClick={() =>
+                exportarGPX(puntos, `${nombreDispositivo}_${selectedTrips[0]?.startTime || desde}`)
+              }
               className="flex items-center gap-1.5 px-3 h-8 bg-emerald-600 hover:bg-emerald-700 active:bg-emerald-800 text-white rounded-lg text-[12px] font-semibold shadow-xs transition-all cursor-pointer disabled:opacity-50 focus:outline-none focus:ring-2 focus:ring-emerald-500"
               aria-label="Descargar recorrido en formato GPX"
             >
@@ -146,8 +157,9 @@ export const DetalleRecorridoPage: React.FC = () => {
         <div className="flex-1 min-h-0 flex gap-3 flex-col lg:flex-row">
           <ViajesSidebar
             trips={trips}
-            selectedTripKey={selectedTripKey}
-            onSelectTrip={handleSelectTrip}
+            selectedTripKeys={selectedTripKeys}
+            onToggleTrip={handleToggleTrip}
+            onSelectAll={handleSelectAll}
             onClearSelection={handleClearSelection}
             cargando={cargandoTrips}
           />
@@ -167,7 +179,7 @@ export const DetalleRecorridoPage: React.FC = () => {
         {puntos.length > 0 && (
           <div className="shrink-0">
             <ReproductorRuta
-              key={selectedTripKey}
+              key={reproductorKey}
               puntos={puntos}
               onPosicionCambio={onPosicionCambio}
               onEncuadrar={handleEncuadrar}

@@ -44,14 +44,14 @@ export const DeviceDeleteConfirmModal: React.FC<DeviceDeleteConfirmModalProps> =
 
   return (
     <div
-      className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/60 backdrop-blur-md animate-in fade-in duration-150"
+      className="fixed inset-0 z-[100] flex items-end sm:items-center justify-center p-0 sm:p-4 bg-black/60 backdrop-blur-md animate-in fade-in duration-150"
       role="dialog"
       aria-modal="true"
       onClick={(e) => {
         if (e.target === e.currentTarget && !isDeleting) onClose();
       }}
     >
-      <div className="bg-white dark:bg-zinc-900 rounded-3xl shadow-2xl w-full max-w-md border border-zinc-200/80 dark:border-zinc-800 text-zinc-900 dark:text-zinc-100 transform transition-all animate-in fade-in zoom-in-95 duration-150 p-6 overflow-hidden">
+      <div className="bg-white dark:bg-zinc-900 rounded-t-3xl sm:rounded-3xl shadow-2xl w-full sm:max-w-md border border-zinc-200/80 dark:border-zinc-800 text-zinc-900 dark:text-zinc-100 transform transition-all animate-in fade-in slide-in-from-bottom-4 sm:zoom-in-95 duration-150 p-6 overflow-hidden">
         {/* Encabezado */}
         <div className="flex items-start justify-between">
           <div className="w-11 h-11 rounded-2xl bg-rose-500/10 text-rose-600 dark:text-rose-400 flex items-center justify-center shrink-0">
@@ -94,9 +94,10 @@ export const DeviceDeleteConfirmModal: React.FC<DeviceDeleteConfirmModalProps> =
             type="button"
             disabled={isDeleting}
             onClick={onClose}
-            className="h-10 px-4 text-sm font-semibold rounded-xl text-zinc-600 dark:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-colors cursor-pointer"
+            className="h-10 flex items-center gap-1.5 px-4 text-sm font-semibold rounded-xl text-zinc-600 dark:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-colors cursor-pointer"
           >
-            Cancelar
+            <X size={14} />
+            <span>Cancelar</span>
           </button>
           <button
             type="button"

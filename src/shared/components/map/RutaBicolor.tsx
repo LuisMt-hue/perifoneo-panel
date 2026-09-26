@@ -4,94 +4,46 @@ import type { PuntoRecorrido } from '../../types/perifoneo.types';
 import { formatearHora } from '../../utils/formato';
 
 /**
- * Constantes visuales para la representación bicolor de rutas
+ * Constantes visuales de la ruta — azul macOS consistente con el resto de la app
+ * (antes bicolor verde/rojo según dentro/fuera de sector; ahora un único trazo).
  */
-export const COLOR_DENTRO_SECTOR = '#22c55e';
-export const COLOR_FUERA_SECTOR = '#ef4444';
+export const COLOR_RUTA = '#155BD0';
 export const RUTA_LINE_WEIGHT = 4;
 export const RUTA_LINE_OPACITY = 0.9;
 export const PUNTO_HITO_RADIUS = 6;
 export const PUNTO_HITO_BORDER_WEIGHT = 2;
 export const COLOR_HITO_BORDE = '#ffffff';
-
-interface TramoRuta {
-  dentro: boolean;
-  coords: [number, number][];
-}
-
-/**
- * Agrupa los puntos GPS contiguos en tramos continuos clasificados como
- * "dentro del sector" (ambos extremos válidos) o "fuera del sector".
- */
-function agruparTramos(puntos: PuntoRecorrido[]): TramoRuta[] {
-  const tramos: TramoRuta[] = [];
-  let actual: TramoRuta | null = null;
-  if (!puntos || puntos.length === 0) return tramos;
-
-  if (puntos.length === 1) {
-    const esDentro = Boolean(puntos[0].dentro_sector === 1 || puntos[0].dentro_sector === true);
-    tramos.push({
-      dentro: esDentro,
-      coords: [[puntos[0].lat, puntos[0].lon]],
-    });
-    return tramos;
-  }
-
-  for (let i = 1; i < puntos.length; i++) {
-    const a = puntos[i - 1];
-    const b = puntos[i];
-    const aDentro = Boolean(a.dentro_sector === 1 || a.dentro_sector === true);
-    const bDentro = Boolean(b.dentro_sector === 1 || b.dentro_sector === true);
-    // Regla de negocio §4.2: Un tramo cuenta como dentro solo si AMBOS extremos están dentro
-    const dentro = aDentro && bDentro;
-
-    if (!actual || actual.dentro !== dentro) {
-      actual = { dentro, coords: [[a.lat, a.lon]] };
-      tramos.push(actual);
-    }
-    actual.coords.push([b.lat, b.lon]);
-  }
-
-  return tramos;
-}
+export const COLOR_HITO_INICIO = '#22c55e';
+export const COLOR_HITO_FIN = '#ef4444';
 
 export interface RutaBicolorProps {
   puntos?: PuntoRecorrido[];
 }
 
 /**
- * Visualizador de Trayectoria en Dos Colores (`RutaBicolor`).
+ * Visualizador de Trayectoria (`RutaBicolor`).
  *
- * Pinta la ruta recorrida en verde para los tramos dentro del sector asignado
- * y en rojo para las desviaciones fuera de zona, señalando los hitos de partida y llegada.
+ * Pinta el recorrido completo en azul (estilo macOS de la app), señalando los
+ * hitos de partida (verde) y llegada (rojo) como marcadores distintivos.
  */
 export const RutaBicolor: React.FC<RutaBicolorProps> = ({ puntos = [] }) => {
   if (!puntos || puntos.length === 0) return null;
 
-  const tramos = agruparTramos(puntos);
+  const coords: [number, number][] = puntos.map((p) => [p.lat, p.lon]);
   const inicio = puntos[0];
   const fin = puntos[puntos.length - 1];
 
   return (
     <>
-      {/* Trazos segmentados según permanencia */}
-      {tramos.map((tramo, idx) => (
-        <Polyline
-          key={`tramo-${idx}`}
-          positions={tramo.coords}
-          color={tramo.dentro ? COLOR_DENTRO_SECTOR : COLOR_FUERA_SECTOR}
-          weight={RUTA_LINE_WEIGHT}
-          opacity={RUTA_LINE_OPACITY}
-        />
-      ))}
+      <Polyline positions={coords} color={COLOR_RUTA} weight={RUTA_LINE_WEIGHT} opacity={RUTA_LINE_OPACITY} />
 
-      {/* Marcador de Inicio (Círculo Verde) */}
+      {/* Marcador de Inicio */}
       <CircleMarker
         center={[inicio.lat, inicio.lon]}
         radius={PUNTO_HITO_RADIUS}
         pathOptions={{
           color: COLOR_HITO_BORDE,
-          fillColor: COLOR_DENTRO_SECTOR,
+          fillColor: COLOR_HITO_INICIO,
           fillOpacity: 1,
           weight: PUNTO_HITO_BORDER_WEIGHT,
         }}
@@ -104,13 +56,13 @@ export const RutaBicolor: React.FC<RutaBicolorProps> = ({ puntos = [] }) => {
         </Popup>
       </CircleMarker>
 
-      {/* Marcador de Fin (Círculo Rojo) */}
+      {/* Marcador de Fin */}
       <CircleMarker
         center={[fin.lat, fin.lon]}
         radius={PUNTO_HITO_RADIUS}
         pathOptions={{
           color: COLOR_HITO_BORDE,
-          fillColor: COLOR_FUERA_SECTOR,
+          fillColor: COLOR_HITO_FIN,
           fillOpacity: 1,
           weight: PUNTO_HITO_BORDER_WEIGHT,
         }}

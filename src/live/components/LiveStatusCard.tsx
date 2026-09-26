@@ -54,7 +54,7 @@ export const LiveStatusCard: React.FC<LiveStatusCardProps> = ({
   };
 
   return (
-    <div className="fixed bottom-3 z-30 transition-all duration-300 left-3 right-3 md:right-auto md:w-96 md:left-[21.5rem] lg:left-[22.5rem]">
+    <div className="absolute bottom-3 z-30 transition-all duration-300 left-3 right-3 md:right-auto md:w-96 md:left-[21.5rem] lg:left-[22.5rem]">
       <div className="p-3.5 rounded-2xl bg-white/90 dark:bg-zinc-900/90 backdrop-blur-2xl border border-zinc-200/80 dark:border-white/10 shadow-2xl animate-in fade-in slide-in-from-bottom-3 duration-200 select-none">
         {/* Cabecera del Inspector */}
         <div className="flex items-start justify-between gap-2 mb-3">

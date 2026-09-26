@@ -1,5 +1,5 @@
 import React, { useMemo, useState } from 'react';
-import { Smartphone, Radio } from 'lucide-react';
+import { Smartphone } from 'lucide-react';
 import { useDevicesManager } from './hooks/useDevicesManager';
 import DevicesToolbar from './components/DevicesToolbar';
 import DevicesTable from './components/DevicesTable';
@@ -72,29 +72,18 @@ export const DevicesPage: React.FC = () => {
   return (
     <div className="h-full overflow-y-auto bg-zinc-100/60 dark:bg-zinc-950/60 p-3 sm:p-5 lg:p-7 select-auto transition-colors">
       <div className="max-w-6xl mx-auto w-full flex flex-col gap-4 sm:gap-5">
-        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
-          <div>
-            <div className="flex items-center gap-2.5 mb-1">
-              <div className="w-9 h-9 rounded-2xl bg-blue-600/10 dark:bg-blue-400/20 text-[#155BD0] dark:text-blue-400 flex items-center justify-center shadow-xs">
-                <Smartphone size={20} />
-              </div>
-              <h1 className="text-xl sm:text-2xl font-bold tracking-tight text-zinc-900 dark:text-zinc-100">
-                Dispositivos de Perifoneo
-              </h1>
+        <div>
+          <div className="flex items-center gap-2.5 mb-1">
+            <div className="w-9 h-9 rounded-2xl bg-blue-600/10 dark:bg-blue-400/20 text-[#155BD0] dark:text-blue-400 flex items-center justify-center shadow-xs">
+              <Smartphone size={20} />
             </div>
-            <p className="text-[13px] text-zinc-500 dark:text-zinc-400 pl-11.5">
-              Perifoneadores y unidades móviles conectadas a Traccar.
-            </p>
+            <h1 className="text-xl sm:text-2xl font-bold tracking-tight text-zinc-900 dark:text-zinc-100">
+              Dispositivos de Perifoneo
+            </h1>
           </div>
-
-          <div className="flex items-center gap-2 pl-11.5 sm:pl-0">
-            <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-white dark:bg-zinc-900 border border-zinc-200/80 dark:border-zinc-800 text-[12px] font-medium text-zinc-600 dark:text-zinc-300 shadow-2xs">
-              <Radio size={12} className="text-emerald-500 animate-pulse" />
-              <span>{devices.length} Total</span>
-              <span className="text-zinc-300 dark:text-zinc-700">|</span>
-              <span className="text-emerald-600 dark:text-emerald-400 font-semibold">{counts.activos} Activos</span>
-            </div>
-          </div>
+          <p className="text-[13px] text-zinc-500 dark:text-zinc-400 pl-11.5">
+            Perifoneadores y unidades móviles conectadas a Traccar.
+          </p>
         </div>
 
         {error && (

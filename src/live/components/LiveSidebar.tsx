@@ -23,7 +23,7 @@ export const LiveSidebar: React.FC<LiveSidebarProps> = ({
 }) => {
   return (
     <aside
-      className={`fixed md:absolute top-0 bottom-0 left-0 md:top-3 md:bottom-3 md:left-3 z-20 w-full sm:w-80 md:w-80 lg:w-84 md:rounded-2xl bg-white/85 dark:bg-zinc-900/85 backdrop-blur-2xl border-r md:border border-zinc-200/80 dark:border-white/10 shadow-2xl flex flex-col transition-all duration-300 overflow-hidden ${
+      className={`absolute top-0 bottom-0 left-0 md:top-3 md:bottom-3 md:left-3 z-20 w-full sm:w-80 md:w-80 lg:w-84 md:rounded-2xl bg-white/85 dark:bg-zinc-900/85 backdrop-blur-2xl border-r md:border border-zinc-200/80 dark:border-white/10 shadow-2xl flex flex-col transition-all duration-300 overflow-hidden ${
         visibleOnMobile ? 'translate-x-0' : '-translate-x-full md:translate-x-0'
       }`}
     >

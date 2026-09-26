@@ -125,62 +125,53 @@ export const ReproductorRuta: React.FC<ReproductorRutaProps> = ({
   const currentPoint = puntos[currentPointIndex] || puntos[0];
 
   return (
-    <div className="bg-white/90 dark:bg-zinc-900/90 backdrop-blur-xl p-3 sm:p-4 rounded-2xl shadow-lg border border-zinc-200/80 dark:border-zinc-800 transition-colors">
-      <div className="flex flex-col md:flex-row items-center gap-3 sm:gap-4">
-        {/* Controles de Reproducción y Velocidad */}
-        <div className="flex items-center gap-3 w-full md:w-auto justify-between md:justify-start">
-          <button
-            type="button"
-            onClick={() => {
-              if (progress >= 100) setProgress(0);
-              setIsPlaying(!isPlaying);
-            }}
-            className="w-10 h-10 rounded-full bg-blue-600 hover:bg-blue-500 text-white flex items-center justify-center transition-all shadow-md shadow-blue-500/20 active:scale-95 cursor-pointer"
-            title={isPlaying ? 'Pausar recorrido' : 'Reproducir recorrido'}
-          >
-            {isPlaying ? <Pause size={18} /> : <Play size={18} className="ml-0.5" />}
-          </button>
+    <div className="bg-white/90 dark:bg-zinc-900/90 backdrop-blur-xl px-3 py-2 sm:px-4 sm:py-2.5 rounded-2xl shadow-lg border border-zinc-200/80 dark:border-zinc-800 transition-colors">
+      <div className="flex items-center gap-2 sm:gap-3">
+        <button
+          type="button"
+          onClick={() => {
+            if (progress >= 100) setProgress(0);
+            setIsPlaying(!isPlaying);
+          }}
+          className="w-8 h-8 shrink-0 rounded-full bg-blue-600 hover:bg-blue-500 text-white flex items-center justify-center transition-all shadow-md shadow-blue-500/20 active:scale-95 cursor-pointer"
+          title={isPlaying ? 'Pausar recorrido' : 'Reproducir recorrido'}
+        >
+          {isPlaying ? <Pause size={14} /> : <Play size={14} className="ml-0.5" />}
+        </button>
 
-          {/* Selector de Velocidad */}
-          <div className="flex items-center gap-1 bg-zinc-100 dark:bg-zinc-800/80 px-2.5 py-1.5 rounded-xl border border-zinc-200/60 dark:border-zinc-700/60">
-            <FastForward size={14} className="text-zinc-500 dark:text-zinc-400" />
-            <select
-              value={speed}
-              onChange={(e) => setSpeed(Number(e.target.value))}
-              className="bg-transparent text-xs font-semibold text-zinc-800 dark:text-zinc-200 border-none focus:outline-hidden cursor-pointer"
-            >
-              {PLAYBACK_SPEED_OPTIONS.map((opt) => (
-                <option key={opt} value={opt} className="bg-white dark:bg-zinc-900">
-                  {opt}x
-                </option>
-              ))}
-            </select>
-          </div>
+        {/* Selector de Velocidad */}
+        <div className="hidden sm:flex items-center gap-1 bg-zinc-100 dark:bg-zinc-800/80 px-2 py-1 rounded-lg border border-zinc-200/60 dark:border-zinc-700/60 shrink-0">
+          <FastForward size={12} className="text-zinc-500 dark:text-zinc-400" />
+          <select
+            value={speed}
+            onChange={(e) => setSpeed(Number(e.target.value))}
+            className="bg-transparent text-[11px] font-semibold text-zinc-800 dark:text-zinc-200 border-none focus:outline-hidden cursor-pointer"
+          >
+            {PLAYBACK_SPEED_OPTIONS.map((opt) => (
+              <option key={opt} value={opt} className="bg-white dark:bg-zinc-900">
+                {opt}x
+              </option>
+            ))}
+          </select>
         </div>
 
         {/* Barra de Progreso Deslizante */}
-        <div className="flex-1 w-full flex items-center gap-3">
-          <input
-            type="range"
-            min="0"
-            max="100"
-            step="0.1"
-            value={progress}
-            onChange={(e) => setProgress(Number(e.target.value))}
-            className="flex-1 w-full h-2 bg-zinc-200 dark:bg-zinc-800 rounded-lg appearance-none cursor-pointer accent-blue-600"
-          />
-          <span className="text-xs font-mono text-zinc-500 dark:text-zinc-400 w-10 text-right tabular-nums font-semibold">
-            {Math.round(progress)}%
-          </span>
-        </div>
+        <input
+          type="range"
+          min="0"
+          max="100"
+          step="0.1"
+          value={progress}
+          onChange={(e) => setProgress(Number(e.target.value))}
+          className="flex-1 min-w-0 h-1.5 bg-zinc-200 dark:bg-zinc-800 rounded-lg appearance-none cursor-pointer accent-blue-600"
+        />
 
         {/* Hora del instante actual */}
         {currentPoint && (
-          <div className="w-full md:w-auto text-xs bg-zinc-100/80 dark:bg-zinc-800/60 px-3 py-1.5 rounded-xl border border-zinc-200/60 dark:border-zinc-700/60 flex items-center justify-center sm:justify-start gap-1 text-zinc-600 dark:text-zinc-400">
-            <Clock size={12} className="text-blue-600 dark:text-blue-400" />
-            <span className="font-mono font-bold text-zinc-900 dark:text-zinc-100">
-              {formatearHora(currentPoint.device_time)}
-            </span>
+          <div className="shrink-0 flex items-center gap-1 text-[11px] font-mono font-semibold text-zinc-600 dark:text-zinc-400">
+            <Clock size={11} className="hidden sm:block text-blue-600 dark:text-blue-400" />
+            <span className="text-zinc-900 dark:text-zinc-100">{formatearHora(currentPoint.device_time)}</span>
+            <span className="hidden sm:inline tabular-nums">({Math.round(progress)}%)</span>
           </div>
         )}
 
@@ -190,9 +181,9 @@ export const ReproductorRuta: React.FC<ReproductorRutaProps> = ({
             type="button"
             onClick={onEncuadrar}
             title="Ver todo el recorrido en el mapa"
-            className="w-9 h-9 shrink-0 rounded-xl flex items-center justify-center bg-zinc-100 dark:bg-zinc-800/80 border border-zinc-200/60 dark:border-zinc-700/60 text-zinc-600 dark:text-zinc-300 hover:bg-zinc-200 dark:hover:bg-zinc-700 transition-colors cursor-pointer"
+            className="w-8 h-8 shrink-0 rounded-lg flex items-center justify-center bg-zinc-100 dark:bg-zinc-800/80 border border-zinc-200/60 dark:border-zinc-700/60 text-zinc-600 dark:text-zinc-300 hover:bg-zinc-200 dark:hover:bg-zinc-700 transition-colors cursor-pointer"
           >
-            <Maximize2 size={14} />
+            <Maximize2 size={13} />
           </button>
         )}
       </div>

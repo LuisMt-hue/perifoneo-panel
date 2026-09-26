@@ -6,7 +6,8 @@ export interface UseLiveFiltersReturn {
   setBusqueda: (val: string) => void;
   setOcultarDesconectados: (val: boolean | ((prev: boolean) => boolean)) => void;
   setEstadoFiltro: (val: LiveFilterState['estadoFiltro']) => void;
-  setGeofenceId: (val: number | 'TODOS') => void;
+  toggleGeofenceId: (val: number) => void;
+  clearGeofenceIds: () => void;
   setSectorFiltro: (val: string | 'TODOS') => void;
   limpiarFiltros: () => void;
   hayFiltrosActivos: boolean;
@@ -28,7 +29,7 @@ export function useLiveFilters(
     busqueda: '',
     ocultarDesconectados: true, // Por defecto ocultar desconectados para reducir ruido
     estadoFiltro: 'TODOS',
-    geofenceId: 'TODOS',
+    geofenceIds: [],
     sectorFiltro: 'TODOS',
   });
 
@@ -75,20 +76,22 @@ export function useLiveFilters(
         if (filters.estadoFiltro === 'DESCONECTADOS' && d.estado !== 'DESCONECTADO') return false;
       }
 
-      // 3. Filtro: Por Geocerca de Traccar (Zona)
-      if (filters.geofenceId !== 'TODOS') {
-        const gId = Number(filters.geofenceId);
+      // 3. Filtro: Por Geocerca de Traccar (Zona) — dispositivo debe estar en ALGUNA de las seleccionadas
+      if (filters.geofenceIds.length > 0) {
         const posGeofenceIds = d.rawPosition?.geofenceIds || [];
-        const geocercaObj = geofences.find((g) => g.id === gId);
 
-        const estaEnGeocercaTraccar = posGeofenceIds.includes(gId);
-        const coincidePorSector =
-          geocercaObj &&
-          d.sector &&
-          (d.sector.toLowerCase() === geocercaObj.name.toLowerCase() ||
-            d.sector.toLowerCase().includes(geocercaObj.name.toLowerCase()));
+        const estaEnAlguna = filters.geofenceIds.some((gId) => {
+          const geocercaObj = geofences.find((g) => g.id === gId);
+          const estaEnGeocercaTraccar = posGeofenceIds.includes(gId);
+          const coincidePorSector =
+            geocercaObj &&
+            d.sector &&
+            (d.sector.toLowerCase() === geocercaObj.name.toLowerCase() ||
+              d.sector.toLowerCase().includes(geocercaObj.name.toLowerCase()));
+          return estaEnGeocercaTraccar || coincidePorSector;
+        });
 
-        if (!estaEnGeocercaTraccar && !coincidePorSector) {
+        if (!estaEnAlguna) {
           return false;
         }
       }
@@ -123,7 +126,7 @@ export function useLiveFilters(
     return (
       Boolean(filters.busqueda) ||
       filters.estadoFiltro !== 'TODOS' ||
-      filters.geofenceId !== 'TODOS' ||
+      filters.geofenceIds.length > 0 ||
       filters.sectorFiltro !== 'TODOS' ||
       !filters.ocultarDesconectados // si no está en el default
     );
@@ -134,7 +137,7 @@ export function useLiveFilters(
       busqueda: '',
       ocultarDesconectados: true,
       estadoFiltro: 'TODOS',
-      geofenceId: 'TODOS',
+      geofenceIds: [],
       sectorFiltro: 'TODOS',
     });
   }, []);
@@ -155,8 +158,18 @@ export function useLiveFilters(
     (val: LiveFilterState['estadoFiltro']) => setFilters((prev) => ({ ...prev, estadoFiltro: val })),
     []
   );
-  const setGeofenceId = useCallback(
-    (val: number | 'TODOS') => setFilters((prev) => ({ ...prev, geofenceId: val })),
+  const toggleGeofenceId = useCallback(
+    (val: number) =>
+      setFilters((prev) => {
+        const next = prev.geofenceIds.includes(val)
+          ? prev.geofenceIds.filter((id) => id !== val)
+          : [...prev.geofenceIds, val];
+        return { ...prev, geofenceIds: next };
+      }),
+    []
+  );
+  const clearGeofenceIds = useCallback(
+    () => setFilters((prev) => ({ ...prev, geofenceIds: [] })),
     []
   );
   const setSectorFiltro = useCallback(
@@ -174,7 +187,8 @@ export function useLiveFilters(
     setBusqueda,
     setOcultarDesconectados,
     setEstadoFiltro,
-    setGeofenceId,
+    toggleGeofenceId,
+    clearGeofenceIds,
     setSectorFiltro,
     limpiarFiltros,
     hayFiltrosActivos,

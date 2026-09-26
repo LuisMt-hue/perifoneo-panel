@@ -130,6 +130,7 @@ export interface LiveFilterState {
   busqueda: string;
   ocultarDesconectados: boolean;
   estadoFiltro: 'TODOS' | 'ACTIVOS' | 'DETENIDOS' | 'DESCONECTADOS';
-  geofenceId: number | 'TODOS';
+  /** Zonas/geocercas seleccionadas — vacío significa "todas". */
+  geofenceIds: number[];
   sectorFiltro: string | 'TODOS';
 }

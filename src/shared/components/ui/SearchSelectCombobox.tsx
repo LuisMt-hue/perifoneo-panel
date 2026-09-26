@@ -1,4 +1,5 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
+import { createPortal } from 'react-dom';
 import { Search, X, ChevronDown } from 'lucide-react';
 
 export interface ComboboxOption {
@@ -46,6 +47,8 @@ export const SearchSelectCombobox: React.FC<SearchSelectComboboxProps> = ({
   const [query, setQuery] = useState('');
   const [abierto, setAbierto] = useState(false);
   const contenedorRef = useRef<HTMLDivElement>(null);
+  const dropdownRef = useRef<HTMLDivElement>(null);
+  const [dropdownStyle, setDropdownStyle] = useState<React.CSSProperties | null>(null);
 
   const opcionActual = useMemo(() => options.find((o) => o.value === value) || null, [options, value]);
 
@@ -57,7 +60,10 @@ export const SearchSelectCombobox: React.FC<SearchSelectComboboxProps> = ({
 
   useEffect(() => {
     function handleClickOutside(event: MouseEvent) {
-      if (contenedorRef.current && !contenedorRef.current.contains(event.target as Node)) {
+      const target = event.target as Node;
+      const dentroContenedor = Boolean(contenedorRef.current?.contains(target));
+      const dentroDropdown = Boolean(dropdownRef.current?.contains(target));
+      if (!dentroContenedor && !dentroDropdown) {
         setAbierto(false);
       }
     }
@@ -71,6 +77,43 @@ export const SearchSelectCombobox: React.FC<SearchSelectComboboxProps> = ({
     return () => {
       document.removeEventListener('mousedown', handleClickOutside);
       document.removeEventListener('keydown', handleKeyDown);
+    };
+  }, [abierto]);
+
+  // Posiciona la lista de sugerencias vía un portal a `document.body`, calculado a
+  // partir del rect real del control — así siempre tiene el viewport completo
+  // disponible (nunca queda recortada por el `overflow` de un contenedor ancestro,
+  // como la hoja de filtros en mobile) y se abre hacia arriba si no hay espacio abajo.
+  useEffect(() => {
+    if (!abierto) {
+      setDropdownStyle(null);
+      return;
+    }
+
+    const ALTURA_ESTIMADA = 220;
+
+    const actualizarPosicion = () => {
+      const el = contenedorRef.current;
+      if (!el) return;
+      const rect = el.getBoundingClientRect();
+      const espacioAbajo = window.innerHeight - rect.bottom;
+      const abrirArriba = espacioAbajo < ALTURA_ESTIMADA && rect.top > espacioAbajo;
+      setDropdownStyle({
+        position: 'fixed',
+        left: rect.left,
+        width: rect.width,
+        ...(abrirArriba
+          ? { bottom: window.innerHeight - rect.top + 6 }
+          : { top: rect.bottom + 6 }),
+      });
+    };
+
+    actualizarPosicion();
+    window.addEventListener('resize', actualizarPosicion);
+    window.addEventListener('scroll', actualizarPosicion, true);
+    return () => {
+      window.removeEventListener('resize', actualizarPosicion);
+      window.removeEventListener('scroll', actualizarPosicion, true);
     };
   }, [abierto]);
 
@@ -158,43 +201,50 @@ export const SearchSelectCombobox: React.FC<SearchSelectComboboxProps> = ({
         </div>
       </div>
 
-      {abierto && (
-        <div className="absolute left-0 top-full mt-1.5 w-full min-w-[180px] rounded-xl bg-white/95 dark:bg-zinc-900/95 backdrop-blur-md shadow-xl border border-zinc-200/80 dark:border-zinc-800 z-50 overflow-hidden py-1 animate-in fade-in zoom-in-95 duration-150">
-          {!query.trim() && (
-            <button
-              type="button"
-              onMouseDown={(e) => e.preventDefault()}
-              onClick={handleClear}
-              className="w-full text-left px-3 py-1.5 text-[13px] italic text-zinc-400 hover:bg-zinc-50 dark:hover:bg-zinc-800/60 transition-colors cursor-pointer"
-            >
-              {emptyOptionLabel}
-            </button>
-          )}
-          {sugerencias.map((opt) => (
-            <button
-              key={opt.value}
-              type="button"
-              onMouseDown={(e) => e.preventDefault()}
-              onClick={() => handleSelect(opt)}
-              className={`w-full flex items-center justify-between gap-2 text-left px-3 py-1.5 text-[13px] transition-colors cursor-pointer ${
-                opt.value === value
-                  ? 'bg-[#155BD0]/10 text-[#155BD0] dark:text-blue-400 font-medium'
-                  : 'text-zinc-700 dark:text-zinc-300 hover:bg-zinc-50 dark:hover:bg-zinc-800/60'
-              }`}
-            >
-              <span className="truncate">{opt.label}</span>
-              {opt.sublabel && (
-                <span className="text-[11px] font-mono text-zinc-400 shrink-0">{opt.sublabel}</span>
-              )}
-            </button>
-          ))}
-          {sugerencias.length === 0 && query.trim() && (
-            <div className="px-3 py-2 text-[13px] text-zinc-400">
-              {allowCustomValue ? `Usar "${query.trim()}"` : 'Sin coincidencias'}
-            </div>
-          )}
-        </div>
-      )}
+      {abierto &&
+        dropdownStyle &&
+        createPortal(
+          <div
+            ref={dropdownRef}
+            style={dropdownStyle}
+            className="min-w-[180px] rounded-xl bg-white/95 dark:bg-zinc-900/95 backdrop-blur-md shadow-xl border border-zinc-200/80 dark:border-zinc-800 z-[200] overflow-hidden py-1 animate-in fade-in zoom-in-95 duration-150"
+          >
+            {!query.trim() && (
+              <button
+                type="button"
+                onMouseDown={(e) => e.preventDefault()}
+                onClick={handleClear}
+                className="w-full text-left px-3 py-1.5 text-[13px] italic text-zinc-400 hover:bg-zinc-50 dark:hover:bg-zinc-800/60 transition-colors cursor-pointer"
+              >
+                {emptyOptionLabel}
+              </button>
+            )}
+            {sugerencias.map((opt) => (
+              <button
+                key={opt.value}
+                type="button"
+                onMouseDown={(e) => e.preventDefault()}
+                onClick={() => handleSelect(opt)}
+                className={`w-full flex items-center justify-between gap-2 text-left px-3 py-1.5 text-[13px] transition-colors cursor-pointer ${
+                  opt.value === value
+                    ? 'bg-[#155BD0]/10 text-[#155BD0] dark:text-blue-400 font-medium'
+                    : 'text-zinc-700 dark:text-zinc-300 hover:bg-zinc-50 dark:hover:bg-zinc-800/60'
+                }`}
+              >
+                <span className="truncate">{opt.label}</span>
+                {opt.sublabel && (
+                  <span className="text-[11px] font-mono text-zinc-400 shrink-0">{opt.sublabel}</span>
+                )}
+              </button>
+            ))}
+            {sugerencias.length === 0 && query.trim() && (
+              <div className="px-3 py-2 text-[13px] text-zinc-400">
+                {allowCustomValue ? `Usar "${query.trim()}"` : 'Sin coincidencias'}
+              </div>
+            )}
+          </div>,
+          document.body
+        )}
     </div>
   );
 };

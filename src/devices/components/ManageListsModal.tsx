@@ -136,14 +136,14 @@ export const ManageListsModal: React.FC<ManageListsModalProps> = ({
 
   return (
     <div
-      className="fixed inset-0 z-[100] flex items-center justify-center p-3 sm:p-4 bg-black/60 backdrop-blur-md animate-in fade-in duration-150"
+      className="fixed inset-0 z-[100] flex items-center justify-center p-0 sm:p-4 bg-black/60 backdrop-blur-md animate-in fade-in duration-150"
       role="dialog"
       aria-modal="true"
       onClick={(e) => {
         if (e.target === e.currentTarget) onClose();
       }}
     >
-      <div className="bg-white dark:bg-zinc-900 rounded-2xl shadow-2xl w-full max-w-md border border-zinc-200/80 dark:border-zinc-800 text-zinc-900 dark:text-zinc-100 max-h-[85vh] flex flex-col overflow-hidden">
+      <div className="bg-white dark:bg-zinc-900 rounded-none sm:rounded-2xl shadow-2xl w-full h-full sm:h-auto sm:max-w-md border-0 sm:border border-zinc-200/80 dark:border-zinc-800 text-zinc-900 dark:text-zinc-100 max-h-full sm:max-h-[85vh] flex flex-col overflow-hidden">
         <div className="flex items-center justify-between px-5 py-3.5 border-b border-zinc-100 dark:border-zinc-800 shrink-0">
           <h3 className="text-[15px] font-semibold text-zinc-900 dark:text-zinc-100">
             Gestionar grupos y bases

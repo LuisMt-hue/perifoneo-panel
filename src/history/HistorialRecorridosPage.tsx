@@ -21,6 +21,7 @@ import { useHistorialResumenQuery } from './hooks/useHistorialResumenQuery';
 import SearchSelectCombobox from '../shared/components/ui/SearchSelectCombobox';
 import FiltroFechas from '../shared/components/ui/FiltroFechas';
 import TablaDatos from '../shared/components/ui/TablaDatos';
+import MobileFilterSheet from '../shared/components/ui/MobileFilterSheet';
 import { formatearDuracion } from '../shared/utils/formato';
 import { exportarExcel } from '../shared/utils/excel';
 import { exportarHistorialPDF } from '../shared/utils/pdf';
@@ -240,40 +241,18 @@ export const HistorialRecorridosPage: React.FC = () => {
     <div className="h-full overflow-y-auto bg-white dark:bg-zinc-950 p-4 sm:p-6 lg:p-8 font-sans select-auto transition-colors">
       <div className="max-w-7xl mx-auto w-full flex flex-col gap-5 sm:gap-6">
         {/* Encabezado de Página estilo Apple */}
-        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-          <div>
-            <div className="flex items-center gap-2.5 mb-1">
-              <div className="size-9 rounded-[21px] bg-blue-600/10 dark:bg-blue-400/20 text-[#155BD0] dark:text-blue-400 flex items-center justify-center shadow-xs">
-                <History size={19} />
-              </div>
-              <h1 className="text-xl sm:text-2xl font-bold tracking-tight text-zinc-900 dark:text-zinc-100 text-balance">
-                Historial de Recorridos
-              </h1>
+        <div>
+          <div className="flex items-center gap-2.5 mb-1">
+            <div className="size-9 rounded-[21px] bg-blue-600/10 dark:bg-blue-400/20 text-[#155BD0] dark:text-blue-400 flex items-center justify-center shadow-xs">
+              <History size={19} />
             </div>
-            <p className="text-xs sm:text-sm text-zinc-500 dark:text-zinc-400 pl-11.5 text-pretty">
-              Resumen consolidado de kilometraje y actividad conectado directamente a Traccar.
-            </p>
+            <h1 className="text-xl sm:text-2xl font-bold tracking-tight text-zinc-900 dark:text-zinc-100 text-balance">
+              Historial de Recorridos
+            </h1>
           </div>
-
-          <div className="flex items-center gap-2 w-full sm:w-auto">
-            <button
-              type="button"
-              onClick={() => refetchResumen()}
-              disabled={isFetching}
-              className="flex items-center gap-1.5 px-3 py-2 bg-zinc-800 hover:bg-zinc-900 active:bg-black text-white text-xs font-semibold rounded-[21px] shadow-xs transition-all cursor-pointer disabled:opacity-50 focus:outline-none focus:ring-2 focus:ring-zinc-500"
-              title="Recargar datos de Traccar"
-              aria-label="Actualizar datos de Traccar"
-            >
-              <RefreshCw size={13} className={isFetching ? 'animate-spin text-white' : ''} />
-              <span className="hidden sm:inline">Actualizar</span>
-            </button>
-
-            <BotonExportarHistorial
-              onExportarExcel={handleExportExcel}
-              onExportarPDF={handleExportPDF}
-              deshabilitado={itemsFiltrados.length === 0}
-            />
-          </div>
+          <p className="text-xs sm:text-sm text-zinc-500 dark:text-zinc-400 pl-11.5 text-pretty">
+            Resumen consolidado de kilometraje y actividad conectado directamente a Traccar.
+          </p>
         </div>
 
         {/* Widgets Métricos estilo Apple Cards */}
@@ -329,7 +308,7 @@ export const HistorialRecorridosPage: React.FC = () => {
             onCambio={(obj) => setFiltros({ fechaInicio: obj.desde, fechaFin: obj.hasta })}
           />
 
-          <div className="relative w-64 sm:w-72">
+          <div className="relative w-full sm:w-64 md:w-72">
             <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-zinc-400 pointer-events-none" />
             <input
               type="text"
@@ -349,46 +328,137 @@ export const HistorialRecorridosPage: React.FC = () => {
             )}
           </div>
 
-          <SearchSelectCombobox
-            className="w-40"
-            options={opcionesSectorFiltro}
-            value={filtros.sectorFiltro}
-            onChange={(v) => setFiltros({ sectorFiltro: v })}
-            placeholder="Sector..."
-            emptyOptionLabel="Todos los sectores"
-            allowCustomValue={false}
-          />
+          {/* Acciones: quedan debajo del searchbox en mobile (el buscador ocupa toda la
+              fila y las empuja) y a su lado en desktop, como en Dispositivos */}
+          <div className="flex items-center gap-2">
+            <button
+              type="button"
+              onClick={() => refetchResumen()}
+              disabled={isFetching}
+              className="flex items-center justify-center gap-1.5 h-9 px-3 bg-zinc-800 hover:bg-zinc-900 active:bg-black text-white text-xs font-semibold rounded-[21px] shadow-xs transition-all cursor-pointer disabled:opacity-50 focus:outline-none focus:ring-2 focus:ring-zinc-500"
+              title="Recargar datos de Traccar"
+              aria-label="Actualizar datos de Traccar"
+            >
+              <RefreshCw size={13} className={isFetching ? 'animate-spin text-white' : ''} />
+              <span className="hidden sm:inline">Actualizar</span>
+            </button>
 
-          <SearchSelectCombobox
-            className="w-36"
-            options={opcionesGrupoFiltro}
-            value={filtros.grupoFiltro}
-            onChange={(v) => setFiltros({ grupoFiltro: v })}
-            placeholder="Grupo..."
-            emptyOptionLabel="Todos los grupos"
-            allowCustomValue={false}
-          />
-
-          <SearchSelectCombobox
-            className="w-36"
-            options={opcionesBaseFiltro}
-            value={filtros.baseFiltro}
-            onChange={(v) => setFiltros({ baseFiltro: v })}
-            placeholder="Base..."
-            emptyOptionLabel="Todas las bases"
-            allowCustomValue={false}
-          />
-
-          {/* Checkbox para ocultar sin actividad */}
-          <label className="flex items-center gap-2 text-[12px] font-medium text-zinc-700 dark:text-zinc-300 ml-auto cursor-pointer select-none bg-zinc-50/80 dark:bg-zinc-900/60 px-3 h-9 rounded-lg border border-zinc-200/80 dark:border-zinc-800/80">
-            <input
-              type="checkbox"
-              checked={filtros.soloConActividad}
-              onChange={(e) => setFiltros({ soloConActividad: e.target.checked })}
-              className="rounded text-[#155BD0] focus:ring-[#155BD0] size-3.5"
+            <BotonExportarHistorial
+              onExportarExcel={handleExportExcel}
+              onExportarPDF={handleExportPDF}
+              deshabilitado={itemsFiltrados.length === 0}
             />
-            <span>Solo con actividad</span>
-          </label>
+          </div>
+
+          {/* Sector / Grupo / Base / "Solo con actividad": inline en desktop, en hoja en mobile */}
+          <div className="hidden md:contents">
+            <SearchSelectCombobox
+              className="w-40"
+              options={opcionesSectorFiltro}
+              value={filtros.sectorFiltro}
+              onChange={(v) => setFiltros({ sectorFiltro: v })}
+              placeholder="Sector..."
+              emptyOptionLabel="Todos los sectores"
+              allowCustomValue={false}
+            />
+
+            <SearchSelectCombobox
+              className="w-36"
+              options={opcionesGrupoFiltro}
+              value={filtros.grupoFiltro}
+              onChange={(v) => setFiltros({ grupoFiltro: v })}
+              placeholder="Grupo..."
+              emptyOptionLabel="Todos los grupos"
+              allowCustomValue={false}
+            />
+
+            <SearchSelectCombobox
+              className="w-36"
+              options={opcionesBaseFiltro}
+              value={filtros.baseFiltro}
+              onChange={(v) => setFiltros({ baseFiltro: v })}
+              placeholder="Base..."
+              emptyOptionLabel="Todas las bases"
+              allowCustomValue={false}
+            />
+
+            <label className="flex items-center gap-2 text-[12px] font-medium text-zinc-700 dark:text-zinc-300 ml-auto cursor-pointer select-none bg-zinc-50/80 dark:bg-zinc-900/60 px-3 h-9 rounded-lg border border-zinc-200/80 dark:border-zinc-800/80">
+              <input
+                type="checkbox"
+                checked={filtros.soloConActividad}
+                onChange={(e) => setFiltros({ soloConActividad: e.target.checked })}
+                className="rounded text-[#155BD0] focus:ring-[#155BD0] size-3.5"
+              />
+              <span>Solo con actividad</span>
+            </label>
+          </div>
+
+          <MobileFilterSheet
+            className="md:hidden ml-auto"
+            activeCount={
+              [
+                Boolean(filtros.sectorFiltro),
+                Boolean(filtros.grupoFiltro),
+                Boolean(filtros.baseFiltro),
+                filtros.soloConActividad,
+              ].filter(Boolean).length
+            }
+          >
+            <div>
+              <label className="block text-[11px] font-semibold uppercase tracking-wider text-zinc-500 dark:text-zinc-400 mb-1.5">
+                Sector
+              </label>
+              <SearchSelectCombobox
+                className="w-full"
+                options={opcionesSectorFiltro}
+                value={filtros.sectorFiltro}
+                onChange={(v) => setFiltros({ sectorFiltro: v })}
+                placeholder="Sector..."
+                emptyOptionLabel="Todos los sectores"
+                allowCustomValue={false}
+              />
+            </div>
+
+            <div>
+              <label className="block text-[11px] font-semibold uppercase tracking-wider text-zinc-500 dark:text-zinc-400 mb-1.5">
+                Grupo
+              </label>
+              <SearchSelectCombobox
+                className="w-full"
+                options={opcionesGrupoFiltro}
+                value={filtros.grupoFiltro}
+                onChange={(v) => setFiltros({ grupoFiltro: v })}
+                placeholder="Grupo..."
+                emptyOptionLabel="Todos los grupos"
+                allowCustomValue={false}
+              />
+            </div>
+
+            <div>
+              <label className="block text-[11px] font-semibold uppercase tracking-wider text-zinc-500 dark:text-zinc-400 mb-1.5">
+                Base
+              </label>
+              <SearchSelectCombobox
+                className="w-full"
+                options={opcionesBaseFiltro}
+                value={filtros.baseFiltro}
+                onChange={(v) => setFiltros({ baseFiltro: v })}
+                placeholder="Base..."
+                emptyOptionLabel="Todas las bases"
+                allowCustomValue={false}
+              />
+            </div>
+
+            <label className="flex items-center gap-2 text-[13px] font-medium text-zinc-700 dark:text-zinc-300 cursor-pointer select-none bg-zinc-50 dark:bg-zinc-800/60 px-3 h-10 rounded-xl border border-zinc-200/80 dark:border-zinc-800/80">
+              <input
+                type="checkbox"
+                checked={filtros.soloConActividad}
+                onChange={(e) => setFiltros({ soloConActividad: e.target.checked })}
+                className="rounded text-[#155BD0] focus:ring-[#155BD0] size-3.5"
+              />
+              <span>Solo con actividad</span>
+            </label>
+          </MobileFilterSheet>
         </div>
 
         {/* Tabla de Resultados con Paginación Integrada (10, 25, 50 registros) */}
@@ -400,6 +470,69 @@ export const HistorialRecorridosPage: React.FC = () => {
           className="rounded-[21px]"
           paginacion={true}
           tamanoPaginaDefault={25}
+          mobileCard={(item) => (
+            <div className="p-3.5 flex flex-col gap-2">
+              <div className="flex items-start justify-between gap-2">
+                <div className="min-w-0">
+                  <div className="font-semibold text-zinc-900 dark:text-zinc-100 text-[13px] truncate">
+                    {item.dispositivoNombre}
+                  </div>
+                  {item.conductor && item.conductor !== item.dispositivoNombre && (
+                    <div className="text-2xs text-zinc-400 dark:text-zinc-500 font-medium truncate">
+                      {item.conductor}
+                    </div>
+                  )}
+                  <div className="text-[11px] font-mono text-zinc-500 dark:text-zinc-400 mt-0.5">
+                    {item.dni || '—'}
+                  </div>
+                </div>
+                <span className="font-mono font-bold text-zinc-900 dark:text-zinc-100 tabular-nums text-[13px] shrink-0">
+                  {item.distanciaKm.toFixed(1)} km
+                </span>
+              </div>
+
+              <div className="flex items-center gap-1.5 flex-wrap">
+                {item.grupoNombre ? (
+                  <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-2xs font-bold bg-zinc-100 dark:bg-zinc-800 text-zinc-700 dark:text-zinc-300 border border-zinc-200 dark:border-zinc-700">
+                    <Users size={10} className="shrink-0 text-zinc-500 dark:text-zinc-400" />
+                    <span>{item.grupoNombre}</span>
+                  </span>
+                ) : (
+                  <span className="inline-flex items-center px-2 py-0.5 rounded-full text-2xs font-medium bg-zinc-100 dark:bg-zinc-800 text-zinc-500 dark:text-zinc-400 border border-zinc-200/80 dark:border-zinc-700/80">
+                    Sin grupo
+                  </span>
+                )}
+                {item.sectorAsignado ? (
+                  <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-2xs font-bold bg-[#155BD0]/10 dark:bg-blue-400/15 text-[#155BD0] dark:text-blue-300 border border-[#155BD0]/20">
+                    <MapPin size={10} className="shrink-0 text-[#155BD0] dark:text-blue-400" />
+                    <span>{item.sectorAsignado}</span>
+                  </span>
+                ) : (
+                  <span className="inline-flex items-center px-2 py-0.5 rounded-full text-2xs font-medium bg-zinc-100 dark:bg-zinc-800 text-zinc-500 dark:text-zinc-400 border border-zinc-200/80 dark:border-zinc-700/80">
+                    Sin sector
+                  </span>
+                )}
+                {item.base && (
+                  <span className="max-w-[8rem] truncate text-2xs text-zinc-500 dark:text-zinc-400" title={item.base}>
+                    Base: {item.base}
+                  </span>
+                )}
+              </div>
+
+              <button
+                type="button"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  irADetalle(item.deviceId);
+                }}
+                className="inline-flex items-center justify-center gap-1.5 px-3 py-2 rounded-xl text-2xs font-semibold bg-blue-600 hover:bg-blue-700 active:bg-blue-800 text-white shadow-xs transition-all cursor-pointer"
+              >
+                <Eye size={12} />
+                <span>Ver ruta</span>
+                <ChevronRight size={12} />
+              </button>
+            </div>
+          )}
           footer={
             <tr>
               <td

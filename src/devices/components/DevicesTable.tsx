@@ -113,7 +113,14 @@ export const DevicesTable: React.FC<DevicesTableProps> = ({
 
     if (col.key === 'base') {
       const base = device.attributes?.base || '';
-      return <span className="text-[13px] text-zinc-600 dark:text-zinc-400">{base || '—'}</span>;
+      return (
+        <span
+          className="block max-w-[10rem] truncate text-[13px] text-zinc-600 dark:text-zinc-400"
+          title={base || undefined}
+        >
+          {base || '—'}
+        </span>
+      );
     }
 
     if (col.key === 'sector') {
@@ -136,9 +143,123 @@ export const DevicesTable: React.FC<DevicesTableProps> = ({
     return null;
   };
 
+  const renderMobileCard = (device: ManagedDevice) => {
+    const isSelected = selectedIds.has(device.id);
+    const base = device.attributes?.base || '';
+    const sector = device.attributes?.sector || '';
+
+    return (
+      <div
+        key={device.id}
+        className={`p-3.5 flex flex-col gap-2.5 ${isSelected ? 'bg-blue-50/60 dark:bg-blue-950/25' : ''}`}
+      >
+        <div className="flex items-start gap-2.5">
+          <input
+            type="checkbox"
+            checked={isSelected}
+            onChange={() => onToggleSeleccion(device.id)}
+            className="mt-1 rounded text-[#155BD0] focus:ring-[#155BD0] h-3.5 w-3.5 cursor-pointer shrink-0"
+          />
+
+          <div className="min-w-0 flex-1">
+            <div className="flex items-center gap-2">
+              <span
+                className={`w-2 h-2 rounded-full shrink-0 ${ESTADO_DOT_CLASSES[device.estado]} ${
+                  device.estado === 'ACTIVO' ? 'animate-pulse' : ''
+                }`}
+              />
+              <span className="text-[13.5px] font-semibold text-zinc-800 dark:text-zinc-200 truncate">
+                {device.name}
+              </span>
+            </div>
+            <div className="flex items-center gap-2 mt-0.5 text-[12px] text-zinc-500 dark:text-zinc-400">
+              <span className="font-mono">{device.uniqueId}</span>
+              {device.phone && (
+                <>
+                  <span className="text-zinc-300 dark:text-zinc-700">·</span>
+                  <span className="font-mono">{device.phone}</span>
+                </>
+              )}
+            </div>
+          </div>
+
+          <div className="flex items-center gap-1 shrink-0">
+            <button
+              type="button"
+              onClick={() => onOpenEditModal(device)}
+              title="Editar dispositivo"
+              className="w-8 h-8 rounded-lg flex items-center justify-center text-zinc-400 hover:text-[#155BD0] hover:bg-blue-50 dark:hover:bg-blue-950/40 transition-colors cursor-pointer"
+            >
+              <Edit3 size={15} />
+            </button>
+            <button
+              type="button"
+              onClick={() => onEliminarDispositivo(device)}
+              title="Eliminar dispositivo de Traccar"
+              className="w-8 h-8 rounded-lg flex items-center justify-center text-zinc-400 hover:text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-950/40 transition-colors cursor-pointer"
+            >
+              <Trash2 size={15} />
+            </button>
+          </div>
+        </div>
+
+        <div className="flex items-center gap-1.5 flex-wrap pl-6">
+          {device.grupoNombre ? (
+            <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-semibold bg-zinc-100 dark:bg-zinc-800 text-zinc-700 dark:text-zinc-300 border border-zinc-200 dark:border-zinc-700">
+              <Users size={10} className="shrink-0 text-zinc-500 dark:text-zinc-400" />
+              <span>{device.grupoNombre}</span>
+            </span>
+          ) : (
+            <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-medium bg-zinc-100 dark:bg-zinc-800 text-zinc-500 dark:text-zinc-400 border border-zinc-200/80 dark:border-zinc-700/80">
+              Sin grupo
+            </span>
+          )}
+
+          {sector ? (
+            <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-[#155BD0]/10 dark:bg-blue-400/15 text-[#155BD0] dark:text-blue-300 border border-[#155BD0]/20">
+              <MapPin size={10} className="shrink-0 text-[#155BD0] dark:text-blue-400" />
+              <span>{sector}</span>
+            </span>
+          ) : (
+            <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-medium bg-zinc-100 dark:bg-zinc-800 text-zinc-500 dark:text-zinc-400 border border-zinc-200/80 dark:border-zinc-700/80">
+              Sin sector
+            </span>
+          )}
+
+          {base && (
+            <span className="max-w-[10rem] truncate text-[11px] text-zinc-500 dark:text-zinc-400" title={base}>
+              Base: {base}
+            </span>
+          )}
+        </div>
+      </div>
+    );
+  };
+
   return (
     <div className="flex-1 flex flex-col min-h-0 bg-white dark:bg-zinc-900 overflow-hidden relative">
-      <div className="flex-1 overflow-auto">
+      {/* Lista de tarjetas para mobile — sustituye la tabla por debajo de `sm` */}
+      <div className="sm:hidden flex-1 overflow-y-auto divide-y divide-zinc-100 dark:divide-zinc-800/70">
+        {cargando ? (
+          <div className="flex flex-col items-center justify-center gap-2 py-16 text-zinc-400">
+            <div className="w-7 h-7 border-2 border-[#155BD0] border-t-transparent rounded-full animate-spin" />
+            <span className="text-[13px] font-medium">Cargando dispositivos desde Traccar...</span>
+          </div>
+        ) : devices.length === 0 ? (
+          <div className="text-center py-16 text-zinc-400 px-4">
+            <p className="text-[13px] font-semibold text-zinc-700 dark:text-zinc-300">
+              No se encontraron dispositivos coincidentes
+            </p>
+            <p className="text-[12px] text-zinc-400 mt-1">
+              Prueba modificando los términos de búsqueda o los filtros activos.
+            </p>
+          </div>
+        ) : (
+          devices.map(renderMobileCard)
+        )}
+      </div>
+
+      <div className="hidden sm:block flex-1 overflow-auto">
         <table className="w-full text-left border-collapse text-[13px] min-w-[680px]">
           <thead className="sticky top-0 z-10 bg-zinc-50/95 dark:bg-zinc-950/80 backdrop-blur-md border-b border-zinc-200/80 dark:border-zinc-800 text-zinc-500 dark:text-zinc-400 font-semibold select-none text-[11px] uppercase tracking-wider">
             <tr>
