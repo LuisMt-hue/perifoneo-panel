@@ -77,6 +77,8 @@ export interface ItemHistorial {
   conductor?: string; // Conductor asignado
   sectorAsignado: string | null; // "A1", "A2", etc. o null si no tiene
   geofenceId: number | null;
+  grupoNombre?: string | null; // Nombre del grupo nativo de Traccar (device.groupId), o null si no tiene
+  base?: string | null; // device.attributes.base, o null si no tiene
   distanciaKm: number;    // Kilómetros totales recorridos
   velocidadMediaKmh?: number; // Velocidad promedio en km/h
   velocidadMaximaKmh?: number; // Velocidad máxima en km/h

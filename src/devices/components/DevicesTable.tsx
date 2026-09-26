@@ -9,12 +9,22 @@ import {
   ChevronRight,
   Layers,
 } from 'lucide-react';
-import type { ManagedDevice, AttributeColumnConfig } from '../types';
+import type { ManagedDevice } from '../types';
+import type { TraccarGeofence, TraccarGroup } from '../../live/types';
+import { DEVICE_TABLE_COLUMNS, type DeviceColumnDef } from '../constants';
+import { formatearDuracionDesde } from '../../shared/utils/formato';
 import DeviceInlineCell from './DeviceInlineCell';
+
+const ESTADO_DOT_CLASSES: Record<ManagedDevice['estado'], string> = {
+  ACTIVO: 'bg-emerald-500',
+  DETENIDO: 'bg-amber-500',
+  DESCONECTADO: 'bg-zinc-400',
+};
 
 interface DevicesTableProps {
   devices: ManagedDevice[];
-  columnasVisibles: AttributeColumnConfig[];
+  geofences: TraccarGeofence[];
+  groups: TraccarGroup[];
   selectedIds: Set<number>;
   onToggleSeleccion: (id: number) => void;
   onSeleccionarTodos: () => void;
@@ -38,7 +48,8 @@ interface DevicesTableProps {
 
 export const DevicesTable: React.FC<DevicesTableProps> = ({
   devices,
-  columnasVisibles,
+  geofences,
+  groups,
   selectedIds,
   onToggleSeleccion,
   onSeleccionarTodos,
@@ -61,33 +72,32 @@ export const DevicesTable: React.FC<DevicesTableProps> = ({
 }) => {
   const todosSeleccionados = devices.length > 0 && devices.every((d) => selectedIds.has(d.id));
 
-  // Obtener valor de celda según el mapeo de propiedad estándar o atributo
-  const getCellValue = (device: ManagedDevice, col: AttributeColumnConfig): any => {
-    const k = col.key;
-    if (k === 'name') return device.name || '';
-    if (k === 'uniqueId') return device.uniqueId || '';
-    if (k === 'phone') return device.phone || device.attributes?.celular || device.attributes?.telefono || '';
-    if (k === 'base') return device.attributes?.base || device.attributes?.BASE || '';
-    if (k === 'distrito') return device.attributes?.distrito || device.attributes?.DISTRITO || '';
-    if (k === 'placa') return device.attributes?.placa || device.attributes?.['PLACA DEL CARRO'] || device.attributes?.placaDelCarro || '';
-    if (k === 'sector') return device.attributes?.sector || device.attributes?.sector_asignado || device.attributes?.SECTOR || '';
+  const sectorOptions = geofences.map((g) => ({ value: g.name, label: g.name }));
+  const groupOptions = groups.map((g) => ({ value: String(g.id), label: g.name }));
 
-    if (col.type === 'attribute') {
-      return device.attributes?.[col.attributeKey || k] ?? '';
+  // groupId es numérico en Traccar; el <select> siempre entrega string
+  const handleInlineSave = (deviceId: number, key: string, value: any, isAttribute: boolean) => {
+    if (key === 'groupId') {
+      return onInlineSave(deviceId, key, value ? Number(value) : null, isAttribute);
     }
+    return onInlineSave(deviceId, key, value, isAttribute);
+  };
 
-    return (device as any)[k] ?? '';
+  const getCellValue = (device: ManagedDevice, col: DeviceColumnDef): any => {
+    if (col.key === 'name') return device.name || '';
+    if (col.key === 'uniqueId') return device.uniqueId || '';
+    if (col.key === 'phone') return device.phone || '';
+    if (col.key === 'groupId') return device.groupId != null ? String(device.groupId) : '';
+    if (col.type === 'attribute') return device.attributes?.[col.attributeKey || col.key] || '';
+    return (device as any)[col.key] ?? '';
   };
 
   return (
     <div className="flex-1 flex flex-col min-h-0 bg-white dark:bg-zinc-900 overflow-hidden relative">
-      {/* Contenedor con Scroll de la Tabla */}
       <div className="flex-1 overflow-auto">
-        <table className="w-full text-left border-collapse text-[12px] min-w-[760px]">
-          {/* Cabecera Fija estilo Apple Numbers */}
+        <table className="w-full text-left border-collapse text-[12px] min-w-[680px]">
           <thead className="sticky top-0 z-10 bg-zinc-50/95 dark:bg-zinc-950/80 backdrop-blur-md border-b border-zinc-200/80 dark:border-zinc-800 text-zinc-500 dark:text-zinc-400 font-semibold select-none text-[11px] uppercase tracking-wider">
             <tr>
-              {/* Checkbox de Selección General Centrado */}
               <th className="w-10 px-3 py-2.5 text-center">
                 <input
                   type="checkbox"
@@ -97,8 +107,7 @@ export const DevicesTable: React.FC<DevicesTableProps> = ({
                 />
               </th>
 
-              {/* Columnas Visibles (Prioritarias y Opcionales) */}
-              {columnasVisibles.map((col) => {
+              {DEVICE_TABLE_COLUMNS.map((col) => {
                 const isSorted = sortConfig.key === col.key;
                 return (
                   <th
@@ -107,20 +116,7 @@ export const DevicesTable: React.FC<DevicesTableProps> = ({
                     className="px-3.5 py-2.5 cursor-pointer hover:bg-zinc-100/70 dark:hover:bg-zinc-800/50 hover:text-zinc-900 dark:hover:text-zinc-100 transition-colors whitespace-nowrap"
                   >
                     <div className="flex items-center gap-1.5 font-semibold">
-                      <span
-                        className={
-                          col.isPriority
-                            ? 'text-zinc-800 dark:text-zinc-200 font-semibold'
-                            : col.type === 'attribute'
-                            ? 'text-purple-600 dark:text-purple-400 font-mono'
-                            : ''
-                        }
-                      >
-                        {col.label}
-                      </span>
-                      {col.isPriority && (
-                        <span className="w-1.5 h-1.5 rounded-full bg-[#155BD0] inline-block shrink-0" title="Prioritaria" />
-                      )}
+                      <span>{col.label}</span>
                       <span className="text-zinc-400 ml-0.5">
                         {isSorted ? (
                           sortConfig.direction === 'asc' ? (
@@ -137,16 +133,14 @@ export const DevicesTable: React.FC<DevicesTableProps> = ({
                 );
               })}
 
-              {/* Columna Acciones Centrada */}
               <th className="w-24 px-3 py-2.5 text-center font-semibold">Acciones</th>
             </tr>
           </thead>
 
-          {/* Cuerpo de la Tabla */}
           <tbody className="divide-y divide-zinc-100 dark:divide-zinc-800/70">
             {cargando ? (
               <tr>
-                <td colSpan={columnasVisibles.length + 2} className="text-center py-16 text-zinc-400">
+                <td colSpan={DEVICE_TABLE_COLUMNS.length + 2} className="text-center py-16 text-zinc-400">
                   <div className="flex flex-col items-center justify-center gap-2">
                     <div className="w-7 h-7 border-2 border-[#155BD0] border-t-transparent rounded-full animate-spin" />
                     <span className="text-[12px] font-medium">Cargando dispositivos desde Traccar...</span>
@@ -155,7 +149,7 @@ export const DevicesTable: React.FC<DevicesTableProps> = ({
               </tr>
             ) : devices.length === 0 ? (
               <tr>
-                <td colSpan={columnasVisibles.length + 2} className="text-center py-16 text-zinc-400">
+                <td colSpan={DEVICE_TABLE_COLUMNS.length + 2} className="text-center py-16 text-zinc-400">
                   <p className="text-[12.5px] font-semibold text-zinc-700 dark:text-zinc-300">
                     No se encontraron dispositivos coincidentes
                   </p>
@@ -175,7 +169,6 @@ export const DevicesTable: React.FC<DevicesTableProps> = ({
                       isSelected ? 'bg-blue-50/60 dark:bg-blue-950/25' : ''
                     }`}
                   >
-                    {/* Checkbox de fila Centrado */}
                     <td className="px-3 py-2 text-center">
                       <input
                         type="checkbox"
@@ -185,47 +178,75 @@ export const DevicesTable: React.FC<DevicesTableProps> = ({
                       />
                     </td>
 
-                    {/* Celdas Dinámicas */}
-                    {columnasVisibles.map((col) => {
+                    {DEVICE_TABLE_COLUMNS.map((col) => {
                       const isSaving = savingCell?.deviceId === device.id && savingCell.key === col.key;
                       const isSuccess = successCell?.deviceId === device.id && successCell.key === col.key;
-
-                      // Columna Estado especial con badge Apple
-                      if (col.key === 'status') {
-                        const isOnline = device.status === 'online';
-                        return (
-                          <td key={col.key} className="px-3.5 py-2 whitespace-nowrap">
-                            <span
-                              className={`inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full text-[11px] font-medium ${
-                                isOnline
-                                  ? 'bg-emerald-50 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-400 border border-emerald-200/60 dark:border-emerald-800/60'
-                                  : 'bg-zinc-100 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-400 border border-zinc-200/60 dark:border-zinc-700/60'
-                              }`}
-                            >
-                              <span
-                                className={`w-1.5 h-1.5 rounded-full ${
-                                  isOnline ? 'bg-emerald-500 animate-pulse' : 'bg-zinc-400'
-                                }`}
-                              />
-                              <span>{isOnline ? 'En Línea' : 'Desconectado'}</span>
-                            </span>
-                          </td>
-                        );
-                      }
-
-                      // Columna Última Actualización especial
-                      if (col.key === 'lastUpdate') {
-                        return (
-                          <td key={col.key} className="px-3.5 py-2 whitespace-nowrap text-zinc-500 font-mono text-[11px]">
-                            {device.lastUpdate ? new Date(device.lastUpdate).toLocaleString() : 'N/D'}
-                          </td>
-                        );
-                      }
-
-                      // Celdas Editables Inline (Propiedades estándar o Atributos)
-                      const isAttribute = col.type === 'attribute';
                       const rawValue = getCellValue(device, col);
 
+                      // Columna NOMBRE: incluye el punto de estado (mismo cálculo que Live)
+                      if (col.key === 'name') {
+                        return (
+                          <td key={col.key} className="px-3.5 py-1.5 whitespace-nowrap">
+                            <div className="flex items-center gap-2">
+                              <span
+                                className={`w-2 h-2 rounded-full shrink-0 ${ESTADO_DOT_CLASSES[device.estado]} ${
+                                  device.estado === 'ACTIVO' ? 'animate-pulse' : ''
+                                }`}
+                                title={`${device.estado} · ${formatearDuracionDesde(device.lastUpdate)}`}
+                              />
+                              <DeviceInlineCell
+                                value={rawValue}
+                                deviceId={device.id}
+                                fieldKey={col.key}
+                                isAttribute={false}
+                                isSaving={isSaving}
+                                isSuccess={isSuccess}
+                                onSave={handleInlineSave}
+                              />
+                            </div>
+                          </td>
+                        );
+                      }
+
+                      if (col.key === 'groupId') {
+                        return (
+                          <td key={col.key} className="px-3.5 py-1.5 whitespace-nowrap">
+                            <DeviceInlineCell
+                              value={rawValue}
+                              deviceId={device.id}
+                              fieldKey="groupId"
+                              isAttribute={false}
+                              isSaving={isSaving}
+                              isSuccess={isSuccess}
+                              onSave={handleInlineSave}
+                              type="select"
+                              options={groupOptions}
+                              placeholder={groupOptions.length === 0 ? 'Sin grupos en Traccar' : 'Sin grupo'}
+                            />
+                          </td>
+                        );
+                      }
+
+                      if (col.key === 'sector') {
+                        return (
+                          <td key={col.key} className="px-3.5 py-1.5 whitespace-nowrap">
+                            <DeviceInlineCell
+                              value={rawValue}
+                              deviceId={device.id}
+                              fieldKey="sector"
+                              isAttribute={true}
+                              isSaving={isSaving}
+                              isSuccess={isSuccess}
+                              onSave={handleInlineSave}
+                              type="select"
+                              options={sectorOptions}
+                              placeholder="Sin sector"
+                            />
+                          </td>
+                        );
+                      }
+
+                      const isAttribute = col.type === 'attribute';
                       return (
                         <td key={col.key} className="px-3.5 py-1.5 whitespace-nowrap">
                           <DeviceInlineCell
@@ -235,14 +256,12 @@ export const DevicesTable: React.FC<DevicesTableProps> = ({
                             isAttribute={isAttribute}
                             isSaving={isSaving}
                             isSuccess={isSuccess}
-                            onSave={onInlineSave}
-                            type={col.key === 'disabled' ? 'boolean' : 'text'}
+                            onSave={handleInlineSave}
                           />
                         </td>
                       );
                     })}
 
-                    {/* Acciones de Fila Centradas */}
                     <td className="px-3 py-2 text-center whitespace-nowrap">
                       <div className="flex items-center justify-center gap-1">
                         <button
@@ -271,7 +290,6 @@ export const DevicesTable: React.FC<DevicesTableProps> = ({
         </table>
       </div>
 
-      {/* Barra Flotante de Acciones Masivas cuando hay Selección */}
       {selectedIds.size > 0 && (
         <div className="absolute bottom-14 left-1/2 -translate-x-1/2 z-30 flex items-center gap-2.5 px-3.5 py-1.5 bg-zinc-900/95 dark:bg-zinc-100/95 text-white dark:text-zinc-900 rounded-2xl shadow-2xl backdrop-blur-xl border border-zinc-700/50 animate-in fade-in slide-in-from-bottom-2 duration-200">
           <div className="flex items-center gap-1.5 text-[11.5px] font-semibold">
@@ -300,7 +318,6 @@ export const DevicesTable: React.FC<DevicesTableProps> = ({
         </div>
       )}
 
-      {/* Barra de Paginación Responsiva con diseño Apple */}
       <div className="flex items-center justify-between px-4 py-2.5 border-t border-zinc-200/80 dark:border-zinc-800 bg-zinc-50/70 dark:bg-zinc-900/60 text-[11.5px] shrink-0 select-none flex-wrap gap-2">
         <div className="flex items-center gap-2.5 text-zinc-500 dark:text-zinc-400 flex-wrap">
           <span className="font-medium hidden sm:inline">Filas por página:</span>

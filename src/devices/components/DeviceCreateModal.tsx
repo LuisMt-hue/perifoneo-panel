@@ -1,35 +1,29 @@
 import React, { useState, useEffect } from 'react';
 import { X, Plus, Loader2, Check } from 'lucide-react';
 import type { CreateDevicePayload } from '../types';
+import type { TraccarGeofence, TraccarGroup } from '../../live/types';
 
 interface DeviceCreateModalProps {
   isOpen: boolean;
   onClose: () => void;
-  onCreate: (payload: CreateDevicePayload) => Promise<void>;
+  onCreate: (payload: CreateDevicePayload) => Promise<unknown>;
+  geofences: TraccarGeofence[];
+  groups: TraccarGroup[];
 }
-
-const CATEGORIAS_SUGERIDAS = [
-  { key: 'moto', label: 'Moto' },
-  { key: 'car', label: 'Auto' },
-  { key: 'truck', label: 'Camioneta' },
-  { key: 'person', label: 'Peatonal / Persona' },
-  { key: 'default', label: 'Por defecto' },
-];
 
 export const DeviceCreateModal: React.FC<DeviceCreateModalProps> = ({
   isOpen,
   onClose,
   onCreate,
+  geofences,
+  groups,
 }) => {
   const [name, setName] = useState('');
   const [uniqueId, setUniqueId] = useState('');
-  const [base, setBase] = useState('');
-  const [distrito, setDistrito] = useState('');
-  const [placa, setPlaca] = useState('');
   const [phone, setPhone] = useState('');
+  const [base, setBase] = useState('');
   const [sector, setSector] = useState('');
-  const [contact, setContact] = useState('');
-  const [category, setCategory] = useState('moto');
+  const [groupId, setGroupId] = useState('');
   const [creando, setCreando] = useState(false);
   const [errorLocal, setErrorLocal] = useState<string | null>(null);
 
@@ -37,13 +31,10 @@ export const DeviceCreateModal: React.FC<DeviceCreateModalProps> = ({
     if (isOpen) {
       setName('');
       setUniqueId('');
-      setBase('');
-      setDistrito('');
-      setPlaca('');
       setPhone('');
+      setBase('');
       setSector('');
-      setContact('');
-      setCategory('moto');
+      setGroupId('');
       setErrorLocal(null);
     }
   }, [isOpen]);
@@ -76,13 +67,10 @@ export const DeviceCreateModal: React.FC<DeviceCreateModalProps> = ({
       await onCreate({
         name: name.trim(),
         uniqueId: uniqueId.trim(),
-        base: base.trim() || undefined,
-        distrito: distrito.trim() || undefined,
-        placa: placa.trim() || undefined,
         phone: phone.trim() || undefined,
-        sector: sector.trim() || undefined,
-        contact: contact.trim() || undefined,
-        category: category.trim() || undefined,
+        base: base.trim() || undefined,
+        sector: sector || undefined,
+        groupId: groupId ? Number(groupId) : undefined,
         disabled: false,
       });
       onClose();
@@ -103,21 +91,13 @@ export const DeviceCreateModal: React.FC<DeviceCreateModalProps> = ({
         if (e.target === e.currentTarget && !creando) onClose();
       }}
     >
-      <div className="bg-white dark:bg-zinc-900 rounded-3xl shadow-2xl w-full max-w-xl border border-zinc-200/80 dark:border-zinc-800 text-zinc-900 dark:text-zinc-100 transform transition-all animate-in fade-in zoom-in-95 duration-150 max-h-[90vh] flex flex-col overflow-hidden">
-        {/* Cabecera macOS */}
+      <div className="bg-white dark:bg-zinc-900 rounded-3xl shadow-2xl w-full max-w-md border border-zinc-200/80 dark:border-zinc-800 text-zinc-900 dark:text-zinc-100 transform transition-all animate-in fade-in zoom-in-95 duration-150 max-h-[90vh] flex flex-col overflow-hidden">
         <div className="flex items-center justify-between px-6 py-4 border-b border-zinc-100 dark:border-zinc-800 bg-zinc-50/70 dark:bg-zinc-950/40 shrink-0">
           <div className="flex items-center gap-2.5">
-            <span className="w-3 h-3 rounded-full bg-rose-500 inline-block" />
-            <span className="w-3 h-3 rounded-full bg-amber-500 inline-block" />
-            <span className="w-3 h-3 rounded-full bg-emerald-500 inline-block" />
-            <div className="ml-2 flex items-center gap-2">
-              <div className="w-7 h-7 rounded-xl bg-blue-600/10 text-[#155BD0] dark:text-blue-400 flex items-center justify-center">
-                <Plus size={16} />
-              </div>
-              <h3 className="text-base font-bold text-zinc-900 dark:text-zinc-100">
-                Nuevo Perifoneador / Dispositivo
-              </h3>
+            <div className="w-7 h-7 rounded-xl bg-blue-600/10 text-[#155BD0] dark:text-blue-400 flex items-center justify-center">
+              <Plus size={16} />
             </div>
+            <h3 className="text-base font-bold text-zinc-900 dark:text-zinc-100">Nuevo Perifoneador</h3>
           </div>
 
           <button
@@ -130,7 +110,6 @@ export const DeviceCreateModal: React.FC<DeviceCreateModalProps> = ({
           </button>
         </div>
 
-        {/* Formulario */}
         <form onSubmit={handleSubmit} className="flex-1 overflow-y-auto p-6 space-y-4">
           {errorLocal && (
             <div className="p-3.5 rounded-2xl bg-rose-50 dark:bg-rose-950/50 border border-rose-200 dark:border-rose-800 text-rose-700 dark:text-rose-300 text-sm">
@@ -138,11 +117,10 @@ export const DeviceCreateModal: React.FC<DeviceCreateModalProps> = ({
             </div>
           )}
 
-          {/* Grupo 1: Identificación Principal (NOMBRE, DNI) */}
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
               <label className="block text-xs font-semibold uppercase tracking-wider text-zinc-700 dark:text-zinc-300 mb-1.5">
-                NOMBRE <span className="text-rose-500">*</span>
+                Nombre <span className="text-rose-500">*</span>
               </label>
               <input
                 type="text"
@@ -157,7 +135,7 @@ export const DeviceCreateModal: React.FC<DeviceCreateModalProps> = ({
 
             <div>
               <label className="block text-xs font-semibold uppercase tracking-wider text-zinc-700 dark:text-zinc-300 mb-1.5">
-                DNI / IDENTIFICADOR <span className="text-rose-500">*</span>
+                DNI <span className="text-rose-500">*</span>
               </label>
               <input
                 type="text"
@@ -171,123 +149,79 @@ export const DeviceCreateModal: React.FC<DeviceCreateModalProps> = ({
             </div>
           </div>
 
-          {/* Grupo 2: Datos Operativos Prioritarios (BASE, DISTRITO, PLACA, CELULAR, SECTOR) */}
-          <div className="p-4 rounded-2xl bg-zinc-50/80 dark:bg-zinc-800/40 border border-zinc-200/70 dark:border-zinc-800 space-y-3.5">
-            <div className="text-xs uppercase font-extrabold text-[#155BD0] dark:text-blue-400 tracking-wider">
-              Datos Operativos Prioritarios
-            </div>
-
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-              <div>
-                <label className="block text-xs font-semibold uppercase tracking-wider text-zinc-600 dark:text-zinc-400 mb-1">
-                  BASE
-                </label>
-                <input
-                  type="text"
-                  disabled={creando}
-                  value={base}
-                  onChange={(e) => setBase(e.target.value)}
-                  placeholder="Ej: Base Sur"
-                  className="w-full h-10 px-3.5 text-sm bg-white dark:bg-zinc-800 border border-zinc-200/80 dark:border-zinc-700 rounded-xl text-zinc-900 dark:text-zinc-100 focus:outline-none focus:ring-2 focus:ring-[#155BD0]/20 focus:border-[#155BD0] font-medium transition-all"
-                />
-              </div>
-
-              <div>
-                <label className="block text-xs font-semibold uppercase tracking-wider text-zinc-600 dark:text-zinc-400 mb-1">
-                  DISTRITO
-                </label>
-                <input
-                  type="text"
-                  disabled={creando}
-                  value={distrito}
-                  onChange={(e) => setDistrito(e.target.value)}
-                  placeholder="Ej: Tacna"
-                  className="w-full h-10 px-3.5 text-sm bg-white dark:bg-zinc-800 border border-zinc-200/80 dark:border-zinc-700 rounded-xl text-zinc-900 dark:text-zinc-100 focus:outline-none focus:ring-2 focus:ring-[#155BD0]/20 focus:border-[#155BD0] font-medium transition-all"
-                />
-              </div>
-
-              <div>
-                <label className="block text-xs font-semibold uppercase tracking-wider text-zinc-600 dark:text-zinc-400 mb-1">
-                  PLACA DEL CARRO
-                </label>
-                <input
-                  type="text"
-                  disabled={creando}
-                  value={placa}
-                  onChange={(e) => setPlaca(e.target.value)}
-                  placeholder="Ej: Z1A-452"
-                  className="w-full h-10 px-3.5 text-sm bg-white dark:bg-zinc-800 border border-zinc-200/80 dark:border-zinc-700 rounded-xl text-zinc-900 dark:text-zinc-100 focus:outline-none focus:ring-2 focus:ring-[#155BD0]/20 focus:border-[#155BD0] font-mono transition-all"
-                />
-              </div>
-            </div>
-
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-1">
-              <div>
-                <label className="block text-xs font-semibold uppercase tracking-wider text-zinc-600 dark:text-zinc-400 mb-1">
-                  CELULAR
-                </label>
-                <input
-                  type="text"
-                  disabled={creando}
-                  value={phone}
-                  onChange={(e) => setPhone(e.target.value)}
-                  placeholder="Ej: 952123456"
-                  className="w-full h-10 px-3.5 text-sm bg-white dark:bg-zinc-800 border border-zinc-200/80 dark:border-zinc-700 rounded-xl text-zinc-900 dark:text-zinc-100 focus:outline-none focus:ring-2 focus:ring-[#155BD0]/20 focus:border-[#155BD0] font-mono transition-all"
-                />
-              </div>
-
-              <div>
-                <label className="block text-xs font-semibold uppercase tracking-wider text-zinc-600 dark:text-zinc-400 mb-1">
-                  SECTOR
-                </label>
-                <input
-                  type="text"
-                  disabled={creando}
-                  value={sector}
-                  onChange={(e) => setSector(e.target.value)}
-                  placeholder="Ej: Sector 2"
-                  className="w-full h-10 px-3.5 text-sm bg-white dark:bg-zinc-800 border border-zinc-200/80 dark:border-zinc-700 rounded-xl text-zinc-900 dark:text-zinc-100 focus:outline-none focus:ring-2 focus:ring-[#155BD0]/20 focus:border-[#155BD0] font-medium transition-all"
-                />
-              </div>
-            </div>
+          <div>
+            <label className="block text-xs font-semibold uppercase tracking-wider text-zinc-700 dark:text-zinc-300 mb-1.5">
+              Celular
+            </label>
+            <input
+              type="text"
+              disabled={creando}
+              value={phone}
+              onChange={(e) => setPhone(e.target.value)}
+              placeholder="Ej: 952123456"
+              className="w-full h-10 px-3.5 text-sm bg-zinc-50 dark:bg-zinc-800/80 border border-zinc-200/80 dark:border-zinc-700 rounded-xl text-zinc-900 dark:text-zinc-100 focus:outline-none focus:ring-2 focus:ring-[#155BD0]/20 focus:border-[#155BD0] font-mono transition-all"
+            />
           </div>
 
-          {/* Grupo 3: Contacto y Categoría */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
             <div>
               <label className="block text-xs font-semibold uppercase tracking-wider text-zinc-700 dark:text-zinc-300 mb-1.5">
-                Chofer / Contacto
+                Grupo
+              </label>
+              <select
+                disabled={creando}
+                value={groupId}
+                onChange={(e) => setGroupId(e.target.value)}
+                className="w-full h-10 px-3.5 text-sm bg-zinc-50 dark:bg-zinc-800/80 border border-zinc-200/80 dark:border-zinc-700 rounded-xl text-zinc-900 dark:text-zinc-100 focus:outline-none focus:ring-2 focus:ring-[#155BD0]/20 focus:border-[#155BD0] cursor-pointer transition-all"
+              >
+                <option value="">Sin grupo</option>
+                {groups.length === 0 && (
+                  <option value="" disabled>
+                    No hay grupos creados en Traccar aún
+                  </option>
+                )}
+                {groups.map((g) => (
+                  <option key={g.id} value={g.id}>
+                    {g.name}
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            <div>
+              <label className="block text-xs font-semibold uppercase tracking-wider text-zinc-700 dark:text-zinc-300 mb-1.5">
+                Base
               </label>
               <input
                 type="text"
                 disabled={creando}
-                value={contact}
-                onChange={(e) => setContact(e.target.value)}
-                placeholder="Nombre del chofer"
+                value={base}
+                onChange={(e) => setBase(e.target.value)}
+                placeholder="Ej: Base Sur"
                 className="w-full h-10 px-3.5 text-sm bg-zinc-50 dark:bg-zinc-800/80 border border-zinc-200/80 dark:border-zinc-700 rounded-xl text-zinc-900 dark:text-zinc-100 focus:outline-none focus:ring-2 focus:ring-[#155BD0]/20 focus:border-[#155BD0] transition-all"
               />
             </div>
 
             <div>
               <label className="block text-xs font-semibold uppercase tracking-wider text-zinc-700 dark:text-zinc-300 mb-1.5">
-                Categoría (Ícono)
+                Sector
               </label>
               <select
                 disabled={creando}
-                value={category}
-                onChange={(e) => setCategory(e.target.value)}
-                className="w-full h-10 px-3.5 text-sm bg-zinc-50 dark:bg-zinc-800/80 border border-zinc-200/80 dark:border-zinc-700 rounded-xl text-zinc-900 dark:text-zinc-100 focus:outline-none focus:ring-2 focus:ring-[#155BD0]/20 focus:border-[#155BD0] transition-all cursor-pointer"
+                value={sector}
+                onChange={(e) => setSector(e.target.value)}
+                className="w-full h-10 px-3.5 text-sm bg-zinc-50 dark:bg-zinc-800/80 border border-zinc-200/80 dark:border-zinc-700 rounded-xl text-zinc-900 dark:text-zinc-100 focus:outline-none focus:ring-2 focus:ring-[#155BD0]/20 focus:border-[#155BD0] cursor-pointer transition-all"
               >
-                {CATEGORIAS_SUGERIDAS.map((cat) => (
-                  <option key={cat.key} value={cat.key}>
-                    {cat.label} ({cat.key})
+                <option value="">Sin sector</option>
+                {geofences.map((g) => (
+                  <option key={g.id} value={g.name}>
+                    {g.name}
                   </option>
                 ))}
               </select>
             </div>
           </div>
 
-          {/* Pie del Formulario */}
           <div className="flex items-center justify-end gap-2.5 pt-4 border-t border-zinc-100 dark:border-zinc-800">
             <button
               type="button"
@@ -305,12 +239,12 @@ export const DeviceCreateModal: React.FC<DeviceCreateModalProps> = ({
               {creando ? (
                 <>
                   <Loader2 size={15} className="animate-spin" />
-                  <span>Creando en Traccar...</span>
+                  <span>Creando...</span>
                 </>
               ) : (
                 <>
                   <Check size={15} />
-                  <span>Registrar Dispositivo</span>
+                  <span>Registrar</span>
                 </>
               )}
             </button>

@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Play, Pause, FastForward, Clock, Gauge, Battery } from 'lucide-react';
+import { Play, Pause, FastForward, Clock } from 'lucide-react';
 import type { PuntoRecorrido } from '../../types/perifoneo.types';
 import { formatearHora } from '../../utils/formato';
 
@@ -171,31 +171,13 @@ export const ReproductorRuta: React.FC<ReproductorRutaProps> = ({
           </span>
         </div>
 
-        {/* Telemetría Instantánea */}
+        {/* Hora del instante actual */}
         {currentPoint && (
-          <div className="w-full md:w-auto text-xs bg-zinc-100/80 dark:bg-zinc-800/60 px-3 py-1.5 rounded-xl border border-zinc-200/60 dark:border-zinc-700/60 flex items-center justify-around sm:justify-start gap-3">
-            <div className="flex items-center gap-1 text-zinc-600 dark:text-zinc-400">
-              <Clock size={12} className="text-blue-600 dark:text-blue-400" />
-              <span className="font-mono font-bold text-zinc-900 dark:text-zinc-100">
-                {formatearHora(currentPoint.device_time)}
-              </span>
-            </div>
-
-            <div className="flex items-center gap-1 text-zinc-600 dark:text-zinc-400">
-              <Gauge size={12} className="text-emerald-600 dark:text-emerald-400" />
-              <span className="font-mono font-bold text-zinc-900 dark:text-zinc-100">
-                {Math.round(currentPoint.velocidad_kmh || 0)} km/h
-              </span>
-            </div>
-
-            {currentPoint.bateria_pct !== undefined && (
-              <div className="flex items-center gap-1 text-zinc-600 dark:text-zinc-400">
-                <Battery size={12} className="text-amber-500" />
-                <span className="font-mono font-bold text-zinc-900 dark:text-zinc-100">
-                  {currentPoint.bateria_pct}%
-                </span>
-              </div>
-            )}
+          <div className="w-full md:w-auto text-xs bg-zinc-100/80 dark:bg-zinc-800/60 px-3 py-1.5 rounded-xl border border-zinc-200/60 dark:border-zinc-700/60 flex items-center justify-center sm:justify-start gap-1 text-zinc-600 dark:text-zinc-400">
+            <Clock size={12} className="text-blue-600 dark:text-blue-400" />
+            <span className="font-mono font-bold text-zinc-900 dark:text-zinc-100">
+              {formatearHora(currentPoint.device_time)}
+            </span>
           </div>
         )}
       </div>

@@ -1,4 +1,4 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import { AlertTriangle, Trash2, X, Loader2 } from 'lucide-react';
 import type { ManagedDevice } from '../types';
 
@@ -17,6 +17,12 @@ export const DeviceDeleteConfirmModal: React.FC<DeviceDeleteConfirmModalProps> =
   onConfirm,
   isDeleting,
 }) => {
+  const [errorLocal, setErrorLocal] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (isOpen) setErrorLocal(null);
+  }, [isOpen]);
+
   useEffect(() => {
     if (!isOpen) return;
     const handleKeyDown = (e: KeyboardEvent) => {
@@ -27,6 +33,14 @@ export const DeviceDeleteConfirmModal: React.FC<DeviceDeleteConfirmModalProps> =
   }, [isOpen, onClose, isDeleting]);
 
   if (!isOpen || !device) return null;
+
+  const handleConfirm = async () => {
+    try {
+      await onConfirm(device.id);
+    } catch (err: any) {
+      setErrorLocal(err.message || 'Error al eliminar el dispositivo en Traccar.');
+    }
+  };
 
   return (
     <div
@@ -66,6 +80,12 @@ export const DeviceDeleteConfirmModal: React.FC<DeviceDeleteConfirmModalProps> =
             <div className="font-bold text-zinc-900 dark:text-zinc-100">{device.name}</div>
             <div className="text-zinc-500 font-mono text-xs mt-1">DNI: {device.uniqueId} (ID #{device.id})</div>
           </div>
+
+          {errorLocal && (
+            <div className="mt-3 p-3 rounded-2xl bg-rose-50 dark:bg-rose-950/50 border border-rose-200 dark:border-rose-800 text-rose-700 dark:text-rose-300 text-sm">
+              {errorLocal}
+            </div>
+          )}
         </div>
 
         {/* Acciones */}
@@ -81,7 +101,7 @@ export const DeviceDeleteConfirmModal: React.FC<DeviceDeleteConfirmModalProps> =
           <button
             type="button"
             disabled={isDeleting}
-            onClick={() => onConfirm(device.id)}
+            onClick={handleConfirm}
             className="h-10 flex items-center gap-2 px-5 text-sm font-semibold rounded-xl bg-rose-600 hover:bg-rose-700 text-white shadow-sm disabled:opacity-50 transition-all cursor-pointer"
           >
             {isDeleting ? (

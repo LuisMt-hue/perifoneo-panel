@@ -51,23 +51,13 @@ export function sanitizeDeviceForTraccar(device: Partial<TraccarDevice>): Record
 }
 
 /**
- * Obtiene la lista completa de dispositivos registrados en Traccar.
- */
-export async function listarDispositivosTraccar(): Promise<TraccarDevice[]> {
-  const url = buildTraccarUrl('/api/devices');
-  return fetchTraccarJson<TraccarDevice[]>(url, { headers: getTraccarHeaders() });
-}
-
-/**
  * Crea un nuevo dispositivo en Traccar (POST /api/devices).
- * Mapea propiedades estándar y almacena base, distrito, placa, sector en attributes.
+ * Mapea propiedades estándar; base y sector se guardan en attributes, groupId es un campo nativo.
  */
 export async function crearDispositivoTraccar(payload: CreateDevicePayload): Promise<TraccarDevice> {
   const attributes: Record<string, any> = { ...(payload.attributes || {}) };
 
   if (payload.base?.trim()) attributes.base = payload.base.trim();
-  if (payload.distrito?.trim()) attributes.distrito = payload.distrito.trim();
-  if (payload.placa?.trim()) attributes.placa = payload.placa.trim();
   if (payload.sector?.trim()) attributes.sector = payload.sector.trim();
 
   const deviceData: Partial<TraccarDevice> = {
@@ -77,6 +67,7 @@ export async function crearDispositivoTraccar(payload: CreateDevicePayload): Pro
     contact: payload.contact?.trim() || undefined,
     category: payload.category?.trim() || undefined,
     disabled: Boolean(payload.disabled),
+    groupId: payload.groupId,
     attributes,
   };
 
@@ -157,14 +148,17 @@ export async function actualizarCampoOAtributo(
 }
 
 /**
- * Propaga un atributo masivamente a una lista de dispositivos.
+ * Propaga un campo masivamente a una lista de dispositivos: puede ser un atributo de texto
+ * (`isAttribute: true`, ej. base/sector) o un campo nativo de Traccar (`isAttribute: false`,
+ * ej. `groupId`).
  */
 export async function propagarAtributoEnLote(
   devices: TraccarDevice[],
   targetIds: number[],
-  attributeKey: string,
-  attributeValue: any,
-  onProgress?: (completados: number, total: number) => void
+  fieldOrKey: string,
+  value: any,
+  onProgress?: (completados: number, total: number) => void,
+  isAttribute: boolean = true
 ): Promise<{ exitosos: number; fallidos: number; actualizados: TraccarDevice[] }> {
   const dispositivosAfectados = devices.filter((d) => targetIds.includes(d.id));
   const total = dispositivosAfectados.length;
@@ -178,112 +172,11 @@ export async function propagarAtributoEnLote(
     await Promise.all(
       chunk.map(async (dev) => {
         try {
-          const res = await actualizarCampoOAtributo(dev, attributeKey, attributeValue, true);
+          const res = await actualizarCampoOAtributo(dev, fieldOrKey, value, isAttribute);
           actualizados.push(res);
           exitosos++;
         } catch (err) {
-          console.error(`Error actualizando atributo "${attributeKey}" en dispositivo ${dev.id}:`, err);
-          fallidos++;
-        } finally {
-          completados++;
-          onProgress?.(completados, total);
-        }
-      })
-    );
-  }
-
-  return { exitosos, fallidos, actualizados };
-}
-
-/**
- * Renombra una clave de atributo en todos los dispositivos que la contengan.
- */
-export async function renombrarAtributoEnLote(
-  devices: TraccarDevice[],
-  oldKey: string,
-  newKey: string,
-  onProgress?: (completados: number, total: number) => void
-): Promise<{ exitosos: number; fallidos: number; actualizados: TraccarDevice[] }> {
-  const cleanNewKey = newKey.trim();
-  if (!cleanNewKey || oldKey === cleanNewKey) {
-    return { exitosos: 0, fallidos: 0, actualizados: [] };
-  }
-
-  const dispositivosAfectados = devices.filter(
-    (d) => d.attributes && oldKey in d.attributes
-  );
-  const total = dispositivosAfectados.length;
-  let completados = 0;
-  let exitosos = 0;
-  let fallidos = 0;
-  const actualizados: TraccarDevice[] = [];
-
-  for (let i = 0; i < dispositivosAfectados.length; i += BATCH_CHUNK_SIZE) {
-    const chunk = dispositivosAfectados.slice(i, i + BATCH_CHUNK_SIZE);
-    await Promise.all(
-      chunk.map(async (dev) => {
-        try {
-          const valor = dev.attributes?.[oldKey];
-          const currentAttrs = { ...(dev.attributes || {}) };
-          delete currentAttrs[oldKey];
-          currentAttrs[cleanNewKey] = valor;
-
-          const res = await guardarDispositivoTraccar({
-            ...dev,
-            attributes: currentAttrs,
-          });
-
-          actualizados.push(res);
-          exitosos++;
-        } catch (err) {
-          console.error(`Error renombrando atributo "${oldKey}" a "${newKey}" en dispositivo ${dev.id}:`, err);
-          fallidos++;
-        } finally {
-          completados++;
-          onProgress?.(completados, total);
-        }
-      })
-    );
-  }
-
-  return { exitosos, fallidos, actualizados };
-}
-
-/**
- * Elimina un atributo de forma masiva en una lista de dispositivos.
- */
-export async function eliminarAtributoEnLote(
-  devices: TraccarDevice[],
-  targetIds: number[],
-  attributeKey: string,
-  onProgress?: (completados: number, total: number) => void
-): Promise<{ exitosos: number; fallidos: number; actualizados: TraccarDevice[] }> {
-  const dispositivosAfectados = devices.filter(
-    (d) => targetIds.includes(d.id) && d.attributes && attributeKey in d.attributes
-  );
-  const total = dispositivosAfectados.length;
-  let completados = 0;
-  let exitosos = 0;
-  let fallidos = 0;
-  const actualizados: TraccarDevice[] = [];
-
-  for (let i = 0; i < dispositivosAfectados.length; i += BATCH_CHUNK_SIZE) {
-    const chunk = dispositivosAfectados.slice(i, i + BATCH_CHUNK_SIZE);
-    await Promise.all(
-      chunk.map(async (dev) => {
-        try {
-          const currentAttrs = { ...(dev.attributes || {}) };
-          delete currentAttrs[attributeKey];
-
-          const res = await guardarDispositivoTraccar({
-            ...dev,
-            attributes: currentAttrs,
-          });
-
-          actualizados.push(res);
-          exitosos++;
-        } catch (err) {
-          console.error(`Error eliminando atributo "${attributeKey}" en dispositivo ${dev.id}:`, err);
+          console.error(`Error actualizando "${fieldOrKey}" en dispositivo ${dev.id}:`, err);
           fallidos++;
         } finally {
           completados++;

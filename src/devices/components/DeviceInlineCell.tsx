@@ -9,7 +9,8 @@ interface DeviceInlineCellProps {
   isSaving: boolean;
   isSuccess: boolean;
   onSave: (deviceId: number, key: string, value: any, isAttribute: boolean) => Promise<void>;
-  type?: 'text' | 'boolean' | 'number';
+  type?: 'text' | 'boolean' | 'number' | 'select';
+  options?: Array<{ value: string; label: string }>;
   placeholder?: string;
 }
 
@@ -22,6 +23,7 @@ export const DeviceInlineCell: React.FC<DeviceInlineCellProps> = ({
   isSuccess,
   onSave,
   type = 'text',
+  options = [],
   placeholder = 'Vacío',
 }) => {
   const [isEditing, setIsEditing] = useState(false);
@@ -86,6 +88,29 @@ export const DeviceInlineCell: React.FC<DeviceInlineCellProps> = ({
         )}
         <span>{isChecked ? 'Deshabilitado' : 'Habilitado'}</span>
       </button>
+    );
+  }
+
+  // Render especial para selects (GRUPO/SECTOR): control siempre interactivo, sin doble clic
+  if (type === 'select') {
+    const displayValue = value === null || value === undefined ? '' : String(value);
+    return (
+      <div className="relative inline-flex items-center gap-1.5 min-w-[120px]">
+        <select
+          disabled={isSaving}
+          value={displayValue}
+          onChange={(e) => onSave(deviceId, fieldKey, e.target.value || null, isAttribute)}
+          className="w-full h-7 px-2 text-[12px] bg-transparent hover:bg-zinc-100/90 dark:hover:bg-zinc-800/80 border border-transparent hover:border-zinc-200 dark:hover:border-zinc-700 rounded-lg text-zinc-800 dark:text-zinc-200 focus:outline-none focus:ring-1 focus:ring-[#155BD0] cursor-pointer"
+        >
+          <option value="">{placeholder}</option>
+          {options.map((opt) => (
+            <option key={opt.value} value={opt.value}>
+              {opt.label}
+            </option>
+          ))}
+        </select>
+        {isSaving && <Loader2 size={11} className="animate-spin text-[#155BD0] shrink-0" />}
+      </div>
     );
   }
 

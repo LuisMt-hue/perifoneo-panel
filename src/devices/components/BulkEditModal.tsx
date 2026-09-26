@@ -1,40 +1,61 @@
 import React, { useState } from 'react';
 import { X, Check, Loader2, Layers } from 'lucide-react';
+import type { TraccarGeofence, TraccarGroup } from '../../live/types';
+
+type CampoEditable = 'base' | 'sector' | 'groupId';
 
 interface BulkEditModalProps {
   isOpen: boolean;
   onClose: () => void;
-  onSubmit: (clave: string, valor: string) => Promise<void>;
-  clavesDisponibles: string[];
+  onSubmit: (fieldOrKey: string, value: string, isAttribute: boolean) => Promise<void>;
   totalSeleccionados: number;
   progreso: { actual: number; total: number } | null;
+  geofences: TraccarGeofence[];
+  groups: TraccarGroup[];
 }
+
+const CAMPOS: Array<{ value: CampoEditable; label: string }> = [
+  { value: 'base', label: 'Base' },
+  { value: 'sector', label: 'Sector' },
+  { value: 'groupId', label: 'Grupo' },
+];
 
 export const BulkEditModal: React.FC<BulkEditModalProps> = ({
   isOpen,
   onClose,
   onSubmit,
-  clavesDisponibles,
   totalSeleccionados,
   progreso,
+  geofences,
+  groups,
 }) => {
-  const [clave, setClave] = useState(clavesDisponibles[0] || 'sector');
+  const [campo, setCampo] = useState<CampoEditable>('base');
   const [valor, setValor] = useState('');
+  const [errorLocal, setErrorLocal] = useState<string | null>(null);
 
   if (!isOpen) return null;
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!clave) return;
-    await onSubmit(clave, valor.trim());
+  const isExecuting = progreso !== null;
+
+  const handleCampoChange = (nuevo: CampoEditable) => {
+    setCampo(nuevo);
+    setValor('');
   };
 
-  const isExecuting = progreso !== null;
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setErrorLocal(null);
+    try {
+      await onSubmit(campo, valor.trim(), campo !== 'groupId');
+      setValor('');
+    } catch (err: any) {
+      setErrorLocal(err.message || 'Error al aplicar el cambio en masa.');
+    }
+  };
 
   return (
     <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/60 backdrop-blur-md animate-in fade-in duration-150">
       <div className="w-full max-w-md bg-white dark:bg-zinc-900 rounded-3xl shadow-2xl p-6 overflow-hidden border border-zinc-200/80 dark:border-zinc-800 text-zinc-900 dark:text-zinc-100">
-        {/* Encabezado */}
         <div className="flex items-center justify-between pb-4 border-b border-zinc-100 dark:border-zinc-800">
           <div className="flex items-center gap-2.5">
             <div className="w-8 h-8 rounded-xl bg-purple-600/10 text-purple-600 dark:text-purple-400 flex items-center justify-center">
@@ -59,21 +80,26 @@ export const BulkEditModal: React.FC<BulkEditModalProps> = ({
           </button>
         </div>
 
-        {/* Formulario */}
         <form onSubmit={handleSubmit} className="mt-4 space-y-4">
+          {errorLocal && (
+            <div className="p-3 rounded-2xl bg-rose-50 dark:bg-rose-950/50 border border-rose-200 dark:border-rose-800 text-rose-700 dark:text-rose-300 text-sm">
+              {errorLocal}
+            </div>
+          )}
+
           <div>
             <label className="block text-xs font-semibold uppercase tracking-wider text-zinc-700 dark:text-zinc-300 mb-1.5">
-              Seleccionar Atributo a Modificar
+              Campo a modificar
             </label>
             <select
-              value={clave}
+              value={campo}
               disabled={isExecuting}
-              onChange={(e) => setClave(e.target.value)}
-              className="w-full h-10 px-3.5 text-sm bg-zinc-50 dark:bg-zinc-800 border border-zinc-200/80 dark:border-zinc-700 rounded-xl text-zinc-900 dark:text-zinc-100 focus:outline-none focus:ring-2 focus:ring-[#155BD0]/20 focus:border-[#155BD0] font-mono cursor-pointer"
+              onChange={(e) => handleCampoChange(e.target.value as CampoEditable)}
+              className="w-full h-10 px-3.5 text-sm bg-zinc-50 dark:bg-zinc-800 border border-zinc-200/80 dark:border-zinc-700 rounded-xl text-zinc-900 dark:text-zinc-100 focus:outline-none focus:ring-2 focus:ring-[#155BD0]/20 focus:border-[#155BD0] cursor-pointer"
             >
-              {clavesDisponibles.map((k) => (
-                <option key={k} value={k}>
-                  {k}
+              {CAMPOS.map((c) => (
+                <option key={c.value} value={c.value}>
+                  {c.label}
                 </option>
               ))}
             </select>
@@ -81,19 +107,51 @@ export const BulkEditModal: React.FC<BulkEditModalProps> = ({
 
           <div>
             <label className="block text-xs font-semibold uppercase tracking-wider text-zinc-700 dark:text-zinc-300 mb-1.5">
-              Nuevo Valor para los {totalSeleccionados} Dispositivos
+              Nuevo valor para los {totalSeleccionados} dispositivos
             </label>
-            <input
-              type="text"
-              disabled={isExecuting}
-              value={valor}
-              onChange={(e) => setValor(e.target.value)}
-              placeholder="Ej: Sector Centro, Base Sur, Z1A-452..."
-              className="w-full h-10 px-3.5 text-sm bg-zinc-50 dark:bg-zinc-800 border border-zinc-200/80 dark:border-zinc-700 rounded-xl text-zinc-900 dark:text-zinc-100 focus:outline-none focus:ring-2 focus:ring-[#155BD0]/20 focus:border-[#155BD0]"
-            />
-            <p className="text-xs text-zinc-400 mt-1">
-              Dejar vacío si deseas borrar este atributo en los dispositivos seleccionados.
-            </p>
+
+            {campo === 'base' && (
+              <input
+                type="text"
+                disabled={isExecuting}
+                value={valor}
+                onChange={(e) => setValor(e.target.value)}
+                placeholder="Ej: Base Sur (vacío para borrar)"
+                className="w-full h-10 px-3.5 text-sm bg-zinc-50 dark:bg-zinc-800 border border-zinc-200/80 dark:border-zinc-700 rounded-xl text-zinc-900 dark:text-zinc-100 focus:outline-none focus:ring-2 focus:ring-[#155BD0]/20 focus:border-[#155BD0]"
+              />
+            )}
+
+            {campo === 'sector' && (
+              <select
+                value={valor}
+                disabled={isExecuting}
+                onChange={(e) => setValor(e.target.value)}
+                className="w-full h-10 px-3.5 text-sm bg-zinc-50 dark:bg-zinc-800 border border-zinc-200/80 dark:border-zinc-700 rounded-xl text-zinc-900 dark:text-zinc-100 focus:outline-none focus:ring-2 focus:ring-[#155BD0]/20 focus:border-[#155BD0] cursor-pointer"
+              >
+                <option value="">Sin sector</option>
+                {geofences.map((g) => (
+                  <option key={g.id} value={g.name}>
+                    {g.name}
+                  </option>
+                ))}
+              </select>
+            )}
+
+            {campo === 'groupId' && (
+              <select
+                value={valor}
+                disabled={isExecuting}
+                onChange={(e) => setValor(e.target.value)}
+                className="w-full h-10 px-3.5 text-sm bg-zinc-50 dark:bg-zinc-800 border border-zinc-200/80 dark:border-zinc-700 rounded-xl text-zinc-900 dark:text-zinc-100 focus:outline-none focus:ring-2 focus:ring-[#155BD0]/20 focus:border-[#155BD0] cursor-pointer"
+              >
+                <option value="">Sin grupo</option>
+                {groups.map((g) => (
+                  <option key={g.id} value={g.id}>
+                    {g.name}
+                  </option>
+                ))}
+              </select>
+            )}
           </div>
 
           {progreso && (
@@ -127,7 +185,7 @@ export const BulkEditModal: React.FC<BulkEditModalProps> = ({
             </button>
             <button
               type="submit"
-              disabled={isExecuting || !clave}
+              disabled={isExecuting}
               className="h-10 flex items-center gap-2 px-5 text-sm font-semibold rounded-xl bg-purple-600 hover:bg-purple-700 text-white shadow-sm disabled:opacity-50 transition-all cursor-pointer"
             >
               {isExecuting ? <Loader2 size={15} className="animate-spin" /> : <Check size={15} />}

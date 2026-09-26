@@ -2,6 +2,15 @@
  * Tipos de datos para el módulo Live conectado directamente a Traccar.
  */
 
+import type { EstadoDispositivo } from '../shared/utils/deviceStatus';
+
+export interface TraccarGroup {
+  id: number;
+  name: string;
+  groupId?: number;
+  attributes?: Record<string, any>;
+}
+
 export interface TraccarDevice {
   id: number;
   name: string;
@@ -76,7 +85,7 @@ export interface DeviceMetadata {
   notas?: string;
 }
 
-export type EstadoDispositivoLive = 'ACTIVO' | 'DETENIDO' | 'DESCONECTADO';
+export type EstadoDispositivoLive = EstadoDispositivo;
 
 /**
  * Dispositivo completamente enriquecido para la interfaz de monitoreo en vivo.

@@ -1,5 +1,5 @@
 import { formatInTimeZone } from 'date-fns-tz';
-import type { TraccarDevice, TraccarGeofence } from '../live/types';
+import type { TraccarDevice, TraccarGeofence, TraccarGroup } from '../live/types';
 import type { ResumenPerifoneador, ResumenSector } from '../shared/types/perifoneo.types';
 import {
   getTraccarToken,
@@ -24,80 +24,18 @@ export { getTraccarToken, buildTraccarUrl, getTraccarHeaders };
 export { obtenerDispositivosTraccar, obtenerGeocercasTraccar };
 
 /* ==========================================================================
-   TIPOS DE REPORTES NATIVOS DE TRACCAR
-   ========================================================================== */
-
-export interface TraccarReportTrip {
-  deviceId: number;
-  deviceName: string;
-  distance: number; // en metros
-  averageSpeed: number; // nudos
-  maxSpeed: number; // nudos
-  spentFuel?: number;
-  duration: number; // duración (en ms o segundos según versión)
-  startTime: string; // ISO 8601
-  endTime: string;   // ISO 8601
-  startAddress?: string;
-  endAddress?: string;
-  startLat?: number;
-  startLon?: number;
-  endLat?: number;
-  endLon?: number;
-  driverUniqueId?: string;
-  driverName?: string;
-}
-
-export interface TraccarReportStop {
-  deviceId: number;
-  deviceName: string;
-  duration: number; // duración (en ms o segundos según versión)
-  startTime: string; // ISO 8601
-  endTime: string;   // ISO 8601
-  address?: string;
-  latitude?: number;
-  longitude?: number;
-}
-
-export interface TraccarReportGeofence {
-  deviceId: number;
-  deviceName: string;
-  geofenceId: number;
-  startTime: string; // ISO 8601
-  endTime: string;   // ISO 8601
-}
-
-export interface TraccarReportSummary {
-  deviceId: number;
-  deviceName: string;
-  distance: number; // metros
-  maxSpeed: number;
-  averageSpeed: number;
-  engineHours?: number;
-  spentFuel?: number;
-  startTime?: string; // ISO 8601
-  endTime?: string;   // ISO 8601
-}
-
-export interface TraccarPositionPoint {
-  id: number;
-  deviceId: number;
-  fixTime: string;
-  valid: boolean;
-  latitude: number;
-  longitude: number;
-  speed: number;
-  course: number;
-  address?: string;
-  geofenceIds?: number[];
-  attributes?: Record<string, any>;
-}
-
-/* ==========================================================================
    ENTIDAD PROCESADA PARA LA TABLA DE HISTORIAL
    ========================================================================== */
 
 import { obtenerMetadatos } from '../live/metadata';
-import type { ItemHistorial } from './types';
+import type {
+  ItemHistorial,
+  TraccarReportTrip,
+  TraccarReportStop,
+  TraccarReportGeofence,
+  TraccarReportSummary,
+  TraccarPositionPoint,
+} from './types';
 export type { ItemHistorial };
 
 /* ==========================================================================
@@ -285,11 +223,13 @@ export function resolverSectorDispositivo(
 export function procesarResumenHistorial({
   devices,
   geofences,
+  groups,
   summaries,
   fechaReferencia,
 }: {
   devices: TraccarDevice[];
   geofences: TraccarGeofence[];
+  groups: TraccarGroup[];
   summaries: TraccarReportSummary[];
   fechaReferencia: string;
 }): ItemHistorial[] {
@@ -298,6 +238,8 @@ export function procesarResumenHistorial({
   for (const s of summaries) {
     summaryPorDevice.set(s.deviceId, s);
   }
+
+  const nombrePorGrupoId = new Map(groups.map((g) => [g.id, g.name]));
 
   const items: ItemHistorial[] = [];
   const KNOTS_TO_KMH = 1.852;
@@ -364,6 +306,9 @@ export function procesarResumenHistorial({
     const tieneActividad =
       distanciaKm > 0.05 || velocidadMaximaKmh > 0 || duracionMinutos > 0 || Boolean(inicio);
 
+    const grupoNombre = device.groupId != null ? nombrePorGrupoId.get(device.groupId) ?? null : null;
+    const base = String(device.attributes?.base || '').trim() || null;
+
     items.push({
       id: `${device.id}_${fechaReferencia}`,
       deviceId: device.id,
@@ -374,6 +319,8 @@ export function procesarResumenHistorial({
       conductor,
       sectorAsignado: sectorNombre,
       geofenceId,
+      grupoNombre,
+      base,
       inicio,
       fin,
       distanciaKm,

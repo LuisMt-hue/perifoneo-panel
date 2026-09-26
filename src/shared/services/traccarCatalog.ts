@@ -1,4 +1,4 @@
-import type { TraccarDevice, TraccarGeofence } from '../../live/types';
+import type { TraccarDevice, TraccarGeofence, TraccarGroup } from '../../live/types';
 import { buildTraccarUrl, getTraccarHeaders, fetchTraccarJson } from './traccarClient';
 
 /**
@@ -15,4 +15,9 @@ export async function obtenerDispositivosTraccar(): Promise<TraccarDevice[]> {
 export async function obtenerGeocercasTraccar(): Promise<TraccarGeofence[]> {
   const url = buildTraccarUrl('/api/geofences');
   return fetchTraccarJson<TraccarGeofence[]>(url, { headers: getTraccarHeaders() });
+}
+
+export async function obtenerGruposTraccar(): Promise<TraccarGroup[]> {
+  const url = buildTraccarUrl('/api/groups');
+  return fetchTraccarJson<TraccarGroup[]>(url, { headers: getTraccarHeaders() });
 }
