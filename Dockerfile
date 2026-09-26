@@ -21,8 +21,6 @@ COPY . .
 # Argumentos de construcción consumidos por Vite durante el build
 ARG VITE_TRACCAR_URL
 ENV VITE_TRACCAR_URL=$VITE_TRACCAR_URL
-ARG VITE_TRACCAR_TOKEN
-ENV VITE_TRACCAR_TOKEN=$VITE_TRACCAR_TOKEN
 
 # Construir los artefactos de producción (tsc && vite build -> dist)
 RUN bun run build

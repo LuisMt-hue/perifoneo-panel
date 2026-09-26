@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useCallback } from 'react';
 import type { LiveDevice, LiveFilterState } from '../types';
 
 export interface UseLiveFiltersReturn {
@@ -33,7 +33,7 @@ export function useLiveFilters(
   });
 
   // Métricas globales sobre todos los dispositivos
-  const counts = useMemo(() => {
+  const statusCounts = useMemo(() => {
     let activos = 0;
     let detenidos = 0;
     let desconectados = 0;
@@ -49,7 +49,6 @@ export function useLiveFilters(
       activos,
       detenidos,
       desconectados,
-      visibles: 0, // se completa abajo
     };
   }, [devices]);
 
@@ -99,7 +98,7 @@ export function useLiveFilters(
         if (d.sector !== filters.sectorFiltro) return false;
       }
 
-      // 4. Búsqueda por texto (DNI, nombre, placa, conductor, sector)
+      // 5. Búsqueda por texto (DNI, nombre, placa, conductor, sector)
       if (query) {
         const matchNombre = d.name.toLowerCase().includes(query);
         const matchDni = d.uniqueId.toLowerCase().includes(query);
@@ -130,7 +129,7 @@ export function useLiveFilters(
     );
   }, [filters]);
 
-  const limpiarFiltros = () => {
+  const limpiarFiltros = useCallback(() => {
     setFilters({
       busqueda: '',
       ocultarDesconectados: true,
@@ -138,25 +137,48 @@ export function useLiveFilters(
       geofenceId: 'TODOS',
       sectorFiltro: 'TODOS',
     });
-  };
+  }, []);
 
-  return {
-    filters,
-    setBusqueda: (val) => setFilters((prev) => ({ ...prev, busqueda: val })),
-    setOcultarDesconectados: (val) =>
+  const setBusqueda = useCallback(
+    (val: string) => setFilters((prev) => ({ ...prev, busqueda: val })),
+    []
+  );
+  const setOcultarDesconectados = useCallback(
+    (val: boolean | ((prev: boolean) => boolean)) =>
       setFilters((prev) => ({
         ...prev,
         ocultarDesconectados: typeof val === 'function' ? val(prev.ocultarDesconectados) : val,
       })),
-    setEstadoFiltro: (val) => setFilters((prev) => ({ ...prev, estadoFiltro: val })),
-    setGeofenceId: (val) => setFilters((prev) => ({ ...prev, geofenceId: val })),
-    setSectorFiltro: (val) => setFilters((prev) => ({ ...prev, sectorFiltro: val })),
+    []
+  );
+  const setEstadoFiltro = useCallback(
+    (val: LiveFilterState['estadoFiltro']) => setFilters((prev) => ({ ...prev, estadoFiltro: val })),
+    []
+  );
+  const setGeofenceId = useCallback(
+    (val: number | 'TODOS') => setFilters((prev) => ({ ...prev, geofenceId: val })),
+    []
+  );
+  const setSectorFiltro = useCallback(
+    (val: string | 'TODOS') => setFilters((prev) => ({ ...prev, sectorFiltro: val })),
+    []
+  );
+
+  const counts = useMemo(
+    () => ({ ...statusCounts, visibles: filteredDevices.length }),
+    [statusCounts, filteredDevices.length]
+  );
+
+  return {
+    filters,
+    setBusqueda,
+    setOcultarDesconectados,
+    setEstadoFiltro,
+    setGeofenceId,
+    setSectorFiltro,
     limpiarFiltros,
     hayFiltrosActivos,
     filteredDevices,
-    counts: {
-      ...counts,
-      visibles: filteredDevices.length,
-    },
+    counts,
   };
 }

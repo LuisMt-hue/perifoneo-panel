@@ -1,33 +1,22 @@
-import type { TraccarDevice, TraccarPosition, TraccarGeofence } from './types';
+import type { TraccarPosition, TraccarDevice } from './types';
 import {
   getTraccarToken,
   buildTraccarUrl,
   getTraccarHeaders,
   fetchTraccarJson,
 } from '../shared/services/traccarClient';
+import { obtenerDispositivosTraccar, obtenerGeocercasTraccar } from '../shared/services/traccarCatalog';
 
 /**
- * Constantes de conexión y reintento para el módulo Live
+ * Constantes de conexión y reintento del WebSocket del módulo Live.
+ * Backoff exponencial con jitter para no martillar el servidor si Traccar
+ * está caído o hay muchos paneles reconectando a la vez.
  */
-export const WS_RECONNECT_DELAY_MS = 5000;
+export const WS_RECONNECT_BASE_MS = 1000;
+export const WS_RECONNECT_MAX_MS = 30000;
 
 export { getTraccarToken, buildTraccarUrl, getTraccarHeaders };
-
-/**
- * Verifica el estado de la sesión o usuario con el token configurado.
- */
-export async function obtenerSesionTraccar(): Promise<any> {
-  const url = buildTraccarUrl('/api/session');
-  return fetchTraccarJson(url, { headers: getTraccarHeaders() });
-}
-
-/**
- * Obtiene la lista completa de dispositivos accesibles en Traccar.
- */
-export async function obtenerDispositivosTraccar(): Promise<TraccarDevice[]> {
-  const url = buildTraccarUrl('/api/devices');
-  return fetchTraccarJson<TraccarDevice[]>(url, { headers: getTraccarHeaders() });
-}
+export { obtenerDispositivosTraccar, obtenerGeocercasTraccar };
 
 /**
  * Obtiene las últimas posiciones registradas para todos los dispositivos.
@@ -35,14 +24,6 @@ export async function obtenerDispositivosTraccar(): Promise<TraccarDevice[]> {
 export async function obtenerPosicionesTraccar(): Promise<TraccarPosition[]> {
   const url = buildTraccarUrl('/api/positions');
   return fetchTraccarJson<TraccarPosition[]>(url, { headers: getTraccarHeaders() });
-}
-
-/**
- * Obtiene las geocercas (sectores/zonas) configuradas en Traccar.
- */
-export async function obtenerGeocercasTraccar(): Promise<TraccarGeofence[]> {
-  const url = buildTraccarUrl('/api/geofences');
-  return fetchTraccarJson<TraccarGeofence[]>(url, { headers: getTraccarHeaders() });
 }
 
 /**
@@ -68,22 +49,38 @@ export interface SocketHandlers {
   onOpen?: () => void;
   onClose?: () => void;
   onError?: (err: Event) => void;
+  /** Se dispara si no hay token de sesión: el socket no llega ni a intentar conectar. */
+  onNoAuth?: () => void;
+  /** Se dispara si un mensaje del socket no se puede parsear como JSON. */
+  onParseError?: (raw: string, error: unknown) => void;
+}
+
+function calcularDelayReconexion(intentos: number): number {
+  const base = Math.min(WS_RECONNECT_MAX_MS, WS_RECONNECT_BASE_MS * 2 ** intentos);
+  return base * (0.5 + Math.random() * 0.5); // jitter para evitar reconexiones sincronizadas
 }
 
 /**
  * Establece conexión en tiempo real vía WebSocket con Traccar (`/api/socket`).
- * Gestiona reconexión automática y emisión de eventos de posiciones y dispositivos.
+ * Gestiona reconexión automática con backoff exponencial y emisión de eventos
+ * de posiciones y dispositivos. Sin token de sesión válido, no intenta conectar.
  */
 export function conectarSocketTraccar(handlers: SocketHandlers): () => void {
   let ws: WebSocket | null = null;
   let reintentarTimeout: any = null;
   let estaCerradoManualmente = false;
+  let intentosReconexion = 0;
 
   const conectar = () => {
     if (estaCerradoManualmente) return;
 
+    const token = getTraccarToken();
+    if (!token) {
+      handlers.onNoAuth?.();
+      return;
+    }
+
     try {
-      const token = getTraccarToken();
       let socketUrl: string;
 
       const traccarEnv = import.meta.env.VITE_TRACCAR_URL as string | undefined;
@@ -91,14 +88,14 @@ export function conectarSocketTraccar(handlers: SocketHandlers): () => void {
         try {
           const u = new URL(traccarEnv);
           const wsProto = u.protocol === 'https:' ? 'wss:' : 'ws:';
-          socketUrl = `${wsProto}//${u.host}/api/socket${token ? `?token=${encodeURIComponent(token)}` : ''}`;
+          socketUrl = `${wsProto}//${u.host}/api/socket?token=${encodeURIComponent(token)}`;
         } catch {
           const protocolo = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
-          socketUrl = `${protocolo}//${window.location.host}/api/socket${token ? `?token=${encodeURIComponent(token)}` : ''}`;
+          socketUrl = `${protocolo}//${window.location.host}/api/socket?token=${encodeURIComponent(token)}`;
         }
       } else {
         const protocolo = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
-        socketUrl = `${protocolo}//${window.location.host}/api/socket${token ? `?token=${encodeURIComponent(token)}` : ''}`;
+        socketUrl = `${protocolo}//${window.location.host}/api/socket?token=${encodeURIComponent(token)}`;
       }
 
       ws = new WebSocket(socketUrl);
@@ -112,6 +109,7 @@ export function conectarSocketTraccar(handlers: SocketHandlers): () => void {
           }
           return;
         }
+        intentosReconexion = 0;
         console.log('[LiveSocket] Conectado en tiempo real a Traccar WebSocket');
         handlers.onOpen?.();
       };
@@ -128,6 +126,7 @@ export function conectarSocketTraccar(handlers: SocketHandlers): () => void {
           }
         } catch (e) {
           console.warn('[LiveSocket] Mensaje no procesable:', event.data);
+          handlers.onParseError?.(event.data, e);
         }
       };
 
@@ -140,13 +139,15 @@ export function conectarSocketTraccar(handlers: SocketHandlers): () => void {
       ws.onclose = () => {
         if (estaCerradoManualmente) return;
         handlers.onClose?.();
-        console.log(`[LiveSocket] Socket cerrado. Reintentando conexión en ${WS_RECONNECT_DELAY_MS / 1000}s...`);
-        reintentarTimeout = setTimeout(conectar, WS_RECONNECT_DELAY_MS);
+        const delay = calcularDelayReconexion(intentosReconexion++);
+        console.log(`[LiveSocket] Socket cerrado. Reintentando conexión en ${Math.round(delay / 1000)}s...`);
+        reintentarTimeout = setTimeout(conectar, delay);
       };
     } catch (err) {
       if (estaCerradoManualmente) return;
       console.error('[LiveSocket] Error al inicializar WebSocket:', err);
-      reintentarTimeout = setTimeout(conectar, WS_RECONNECT_DELAY_MS);
+      const delay = calcularDelayReconexion(intentosReconexion++);
+      reintentarTimeout = setTimeout(conectar, delay);
     }
   };
 

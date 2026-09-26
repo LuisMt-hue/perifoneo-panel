@@ -1,4 +1,4 @@
-import { tokenStorage } from './tokenStorage';
+import { tokenStorage, notifySessionExpired } from './tokenStorage';
 
 /**
  * Cliente HTTP unificado y seguro para el backend de Traccar.
@@ -8,40 +8,22 @@ import { tokenStorage } from './tokenStorage';
  */
 
 /**
- * Obtiene el token activo de Traccar.
- * Prioridad de resolución:
- * 1. Token de sesión del usuario autenticado en sessionStorage (`tokenStorage.getToken()`).
- * 2. Token configurado en variables de entorno (`import.meta.env.VITE_TRACCAR_TOKEN`).
- * 3. Cadena vacía si no existe token configurado (obliga a autenticación interactiva).
+ * Obtiene el token activo de Traccar: únicamente el de la sesión del usuario autenticado.
+ * Sin sesión válida no existe token, lo que obliga a pasar por el login interactivo
+ * antes de poder realizar cualquier petición autenticada.
  */
 export function getTraccarToken(): string {
-  const tokenUsuario = tokenStorage.getToken();
-  if (tokenUsuario?.trim()) {
-    return tokenUsuario.trim();
-  }
-
-  const tokenEnv = import.meta.env.VITE_TRACCAR_TOKEN;
-  if (tokenEnv?.trim()) {
-    return tokenEnv.trim();
-  }
-
-  return '';
+  return tokenStorage.getToken()?.trim() || '';
 }
 
 /**
- * Construye la URL para las peticiones a Traccar incluyendo el token de autenticación.
+ * Construye la URL para las peticiones REST a Traccar.
  * Utiliza ruta relativa al origen actual para aprovechar el proxy (tanto en Vite dev como en Nginx producción).
+ * La autenticación va únicamente por cabecera (`getTraccarHeaders`) y cookie de sesión;
+ * el token en query string queda reservado para el WebSocket, que no admite cabeceras personalizadas.
  */
 export function buildTraccarUrl(endpoint: string): string {
-  const base = endpoint.startsWith('/') ? endpoint : `/${endpoint}`;
-  const url = new URL(base, window.location.origin);
-  const token = getTraccarToken();
-
-  if (token) {
-    url.searchParams.set('token', token);
-  }
-
-  return url.pathname + url.search;
+  return endpoint.startsWith('/') ? endpoint : `/${endpoint}`;
 }
 
 /**
@@ -70,6 +52,12 @@ export async function fetchTraccarJson<T>(url: string, init?: RequestInit): Prom
     credentials: 'include',
     ...init,
   });
+
+  if (res.status === 401) {
+    tokenStorage.clear();
+    notifySessionExpired();
+    throw new Error('Sesión de Traccar expirada o inválida. Inicia sesión nuevamente.');
+  }
 
   if (!res.ok) {
     let bodySnippet = '';

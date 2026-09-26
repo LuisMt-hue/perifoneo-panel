@@ -2,7 +2,6 @@
 
 interface ImportMetaEnv {
   readonly VITE_TRACCAR_URL?: string;
-  readonly VITE_TRACCAR_TOKEN?: string;
 }
 
 interface ImportMeta {

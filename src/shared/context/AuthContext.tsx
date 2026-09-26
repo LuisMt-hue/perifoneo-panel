@@ -18,6 +18,7 @@ interface AuthProviderProps {
 export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const [token, setToken] = useState<string | null>(() => tokenStorage.getToken());
   const [user, setUser] = useState<Usuario | null>(() => tokenStorage.getUser());
+  const [sessionExpiredFlag, setSessionExpiredFlag] = useState(false);
 
   // Verificar la sesión con el backend de Traccar al montar la aplicación
   useEffect(() => {
@@ -48,11 +49,12 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     };
   }, []);
 
-  // Suscribirse a eventos de expiración de sesión
+  // Suscribirse a eventos de expiración de sesión (ej. 401 detectado a mitad de uso)
   useEffect(() => {
     const unsubscribe = onSessionExpired(() => {
       setToken(null);
       setUser(null);
+      setSessionExpiredFlag(true);
     });
     return unsubscribe;
   }, []);
@@ -61,6 +63,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     tokenStorage.setSession(newToken, usuario);
     setToken(newToken);
     setUser(usuario);
+    setSessionExpiredFlag(false);
   };
 
   const logout = () => {
@@ -75,10 +78,11 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       token,
       isAuthenticated: Boolean(user),
       isAdmin: user?.rol === 'ADMIN' || Boolean(user?.administrator),
+      sessionExpiredFlag,
       login,
       logout,
     }),
-    [user, token]
+    [user, token, sessionExpiredFlag]
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

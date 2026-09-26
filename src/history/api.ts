@@ -7,6 +7,7 @@ import {
   getTraccarHeaders,
   fetchTraccarJson,
 } from '../shared/services/traccarClient';
+import { obtenerDispositivosTraccar, obtenerGeocercasTraccar } from '../shared/services/traccarCatalog';
 
 export * from './types';
 
@@ -20,6 +21,7 @@ export const MS_PER_SECOND = 1000;
 export const METERS_PER_KM = 1000;
 
 export { getTraccarToken, buildTraccarUrl, getTraccarHeaders };
+export { obtenerDispositivosTraccar, obtenerGeocercasTraccar };
 
 /* ==========================================================================
    TIPOS DE REPORTES NATIVOS DE TRACCAR
@@ -148,22 +150,6 @@ export function obtenerDuracionSegundos(item: {
 /* ==========================================================================
    CONSULTAS A LA API DE TRACCAR
    ========================================================================== */
-
-/**
- * Obtiene la lista completa de dispositivos registrados en Traccar.
- */
-export async function obtenerDispositivosTraccar(): Promise<TraccarDevice[]> {
-  const url = buildTraccarUrl('/api/devices');
-  return fetchTraccarJson<TraccarDevice[]>(url, { headers: getTraccarHeaders() });
-}
-
-/**
- * Obtiene la lista de geocercas / sectores configuradas en Traccar (A1, A2, etc.).
- */
-export async function obtenerGeocercasTraccar(): Promise<TraccarGeofence[]> {
-  const url = buildTraccarUrl('/api/geofences');
-  return fetchTraccarJson<TraccarGeofence[]>(url, { headers: getTraccarHeaders() });
-}
 
 export interface FiltrosReporteTraccar {
   deviceIds: number[];

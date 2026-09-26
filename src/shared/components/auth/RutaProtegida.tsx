@@ -17,11 +17,11 @@ interface RutaProtegidaProps {
  * no está autenticado o la sesión expiró, redirige hacia `/login`.
  */
 export const RutaProtegida: React.FC<RutaProtegidaProps> = ({ rol, children }) => {
-  const { user, isAuthenticated, isAdmin } = useAuth();
+  const { user, isAuthenticated, isAdmin, sessionExpiredFlag } = useAuth();
 
   // Requiere sesión activa del usuario autenticado con Traccar
   if (!isAuthenticated || !user) {
-    return <Navigate to="/login" replace />;
+    return <Navigate to={sessionExpiredFlag ? '/login?expirada=1' : '/login'} replace />;
   }
 
   // Si se exige un rol específico (ej. ADMIN) y el usuario no lo posee, redirigir a inicio

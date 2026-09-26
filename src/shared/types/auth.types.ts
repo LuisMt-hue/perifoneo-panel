@@ -85,6 +85,8 @@ export interface AuthContextType {
   isAuthenticated: boolean;
   /** Indica si el usuario actual posee el rol de Administrador */
   isAdmin: boolean;
+  /** True cuando la sesión se cerró por expiración/invalidez detectada en caliente (401), no por logout manual */
+  sessionExpiredFlag: boolean;
   /** Inicia sesión almacenando el token y registrando el usuario */
   login: (token: string, usuario: Usuario) => void;
   /** Cierra la sesión limpiando el almacenamiento y el estado global */
