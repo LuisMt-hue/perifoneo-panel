@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Play, Pause, FastForward, Clock } from 'lucide-react';
+import { Play, Pause, FastForward, Clock, Maximize2 } from 'lucide-react';
 import type { PuntoRecorrido } from '../../types/perifoneo.types';
 import { formatearHora } from '../../utils/formato';
 
@@ -11,6 +11,8 @@ export const PLAYBACK_SPEED_OPTIONS = [1, 10, 30, 60] as const;
 export interface ReproductorRutaProps {
   puntos?: PuntoRecorrido[];
   onPosicionCambio?: (punto: PuntoRecorrido) => void;
+  /** Si se provee, muestra un botón para volver a encuadrar el mapa en todo el recorrido. */
+  onEncuadrar?: () => void;
 }
 
 /**
@@ -22,6 +24,7 @@ export interface ReproductorRutaProps {
 export const ReproductorRuta: React.FC<ReproductorRutaProps> = ({
   puntos = [],
   onPosicionCambio,
+  onEncuadrar,
 }) => {
   const [isPlaying, setIsPlaying] = useState(false);
   const [speed, setSpeed] = useState(1);
@@ -179,6 +182,18 @@ export const ReproductorRuta: React.FC<ReproductorRutaProps> = ({
               {formatearHora(currentPoint.device_time)}
             </span>
           </div>
+        )}
+
+        {/* Encuadrar todo el recorrido en el mapa */}
+        {onEncuadrar && (
+          <button
+            type="button"
+            onClick={onEncuadrar}
+            title="Ver todo el recorrido en el mapa"
+            className="w-9 h-9 shrink-0 rounded-xl flex items-center justify-center bg-zinc-100 dark:bg-zinc-800/80 border border-zinc-200/60 dark:border-zinc-700/60 text-zinc-600 dark:text-zinc-300 hover:bg-zinc-200 dark:hover:bg-zinc-700 transition-colors cursor-pointer"
+          >
+            <Maximize2 size={14} />
+          </button>
         )}
       </div>
     </div>

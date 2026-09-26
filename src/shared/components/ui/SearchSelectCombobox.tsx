@@ -4,6 +4,10 @@ import { Search, X, ChevronDown } from 'lucide-react';
 export interface ComboboxOption {
   value: string;
   label: string;
+  /** Texto secundario mostrado a la derecha en la sugerencia (ej. DNI), no afecta el valor confirmado. */
+  sublabel?: string;
+  /** Texto adicional (no visible) que también se compara al buscar, ej. un DNI o alias. */
+  keywords?: string;
 }
 
 interface SearchSelectComboboxProps {
@@ -72,7 +76,9 @@ export const SearchSelectCombobox: React.FC<SearchSelectComboboxProps> = ({
 
   const sugerencias = useMemo(() => {
     const q = query.trim().toLowerCase();
-    const lista = q ? options.filter((o) => o.label.toLowerCase().includes(q)) : options;
+    const lista = q
+      ? options.filter((o) => `${o.label} ${o.keywords || ''}`.toLowerCase().includes(q))
+      : options;
     return lista.slice(0, maxSuggestions);
   }, [options, query, maxSuggestions]);
 
@@ -170,13 +176,16 @@ export const SearchSelectCombobox: React.FC<SearchSelectComboboxProps> = ({
               type="button"
               onMouseDown={(e) => e.preventDefault()}
               onClick={() => handleSelect(opt)}
-              className={`w-full text-left px-3 py-1.5 text-[13px] transition-colors cursor-pointer ${
+              className={`w-full flex items-center justify-between gap-2 text-left px-3 py-1.5 text-[13px] transition-colors cursor-pointer ${
                 opt.value === value
                   ? 'bg-[#155BD0]/10 text-[#155BD0] dark:text-blue-400 font-medium'
                   : 'text-zinc-700 dark:text-zinc-300 hover:bg-zinc-50 dark:hover:bg-zinc-800/60'
               }`}
             >
-              {opt.label}
+              <span className="truncate">{opt.label}</span>
+              {opt.sublabel && (
+                <span className="text-[11px] font-mono text-zinc-400 shrink-0">{opt.sublabel}</span>
+              )}
             </button>
           ))}
           {sugerencias.length === 0 && query.trim() && (

@@ -25,8 +25,10 @@ const ESTADO_INICIAL: HistorialFiltrosState = {
 
 /**
  * Estado de filtros del Historial + cálculo de `targetDeviceIds` como pipeline de
- * predicados combinables con AND (dispositivo, sector, grupo y base pueden aplicarse
- * juntos), usado para el push-down hacia /api/reports/summary.
+ * predicados combinables con AND (búsqueda por texto, sector, grupo y base pueden
+ * aplicarse juntos), usado para el push-down hacia /api/reports/summary.
+ * `dispositivoFiltro` es texto libre (nombre o DNI, sin coincidencia exacta) — la
+ * tabla responde directo a lo que se escribe, sin autocompletado.
  */
 export function useHistorialFiltros(dispositivos: TraccarDevice[], geocercas: TraccarGeofence[]) {
   const [filtros, setFiltrosState] = useState<HistorialFiltrosState>(ESTADO_INICIAL);
@@ -39,7 +41,12 @@ export function useHistorialFiltros(dispositivos: TraccarDevice[], geocercas: Tr
 
     return dispositivos
       .filter((d) => {
-        if (dispositivoFiltro && d.id !== Number(dispositivoFiltro)) return false;
+        if (dispositivoFiltro) {
+          const q = dispositivoFiltro.trim().toLowerCase();
+          const matchNombre = d.name?.toLowerCase().includes(q);
+          const matchDni = d.uniqueId?.toLowerCase().includes(q);
+          if (!matchNombre && !matchDni) return false;
+        }
 
         if (sectorFiltro) {
           const { sectorNombre } = resolverSectorDispositivo(d, geocercas);

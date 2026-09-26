@@ -66,6 +66,8 @@ export function useDetalleRecorridoBase(deviceId: number, desde: string, hasta: 
     sectorInfo,
     sectoresFondo,
     trips,
+    fromISO,
+    toISO,
     cargandoTrips: tripsQuery.isLoading,
     cargandoCatalogos: devicesQuery.isLoading || geofencesQuery.isLoading,
   };

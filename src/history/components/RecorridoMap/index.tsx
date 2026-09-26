@@ -13,8 +13,9 @@ interface RecorridoMapProps {
   puntos: PuntoRecorrido[];
   sectoresFondo: Sector[];
   posicionActual: PuntoRecorrido | null;
-  hayTripSeleccionado: boolean;
   cargandoRuta: boolean;
+  /** Cambiar este número fuerza un nuevo encuadre del mapa a todo el recorrido. */
+  fitTrigger?: number;
 }
 
 /**
@@ -26,8 +27,8 @@ export const RecorridoMap: React.FC<RecorridoMapProps> = ({
   puntos,
   sectoresFondo,
   posicionActual,
-  hayTripSeleccionado,
   cargandoRuta,
+  fitTrigger,
 }) => {
   const centroMapa: [number, number] = puntos.length > 0 ? [puntos[0].lat, puntos[0].lon] : CENTRO_TACNA;
 
@@ -39,7 +40,7 @@ export const RecorridoMap: React.FC<RecorridoMapProps> = ({
   return (
     <div className="relative w-full h-full">
       <MapaBase centro={centroMapa} zoom={14}>
-        <RecorridoMapCamera boundsToFit={boundsToFit} />
+        <RecorridoMapCamera boundsToFit={boundsToFit} fitTrigger={fitTrigger} />
         {sectoresFondo.length > 0 && <CapaSectores sectores={sectoresFondo} />}
         {puntos.length > 0 && <RutaBicolor puntos={puntos} />}
 
@@ -55,15 +56,15 @@ export const RecorridoMap: React.FC<RecorridoMapProps> = ({
         )}
       </MapaBase>
 
-      {!hayTripSeleccionado && (
+      {!cargandoRuta && puntos.length === 0 && (
         <div className="absolute inset-0 flex items-center justify-center bg-white/50 dark:bg-zinc-950/50 pointer-events-none">
-          <p className="text-xs font-medium text-zinc-600 dark:text-zinc-300 bg-white/95 dark:bg-zinc-900/95 px-4 py-2 rounded-xl shadow-xs">
-            Selecciona un viaje en la lista para ver su recorrido
+          <p className="text-[13px] font-medium text-zinc-600 dark:text-zinc-300 bg-white/95 dark:bg-zinc-900/95 px-4 py-2 rounded-xl shadow-xs">
+            Sin datos GPS para este rango
           </p>
         </div>
       )}
 
-      {hayTripSeleccionado && cargandoRuta && (
+      {cargandoRuta && (
         <div className="absolute inset-0 flex items-center justify-center bg-white/40 dark:bg-zinc-950/40 pointer-events-none">
           <Loader2 size={28} className="animate-spin text-[#155BD0]" />
         </div>

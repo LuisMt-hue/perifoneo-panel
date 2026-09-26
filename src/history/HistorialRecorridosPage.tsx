@@ -8,16 +8,17 @@ import {
   Users,
   ChevronRight,
   Activity,
-  Filter,
   Milestone,
   RefreshCw,
   Eye,
+  Search,
+  X,
 } from 'lucide-react';
 import type { ItemHistorial } from './api';
 import { useHistorialCatalogos } from './hooks/useHistorialCatalogos';
 import { useHistorialFiltros } from './hooks/useHistorialFiltros';
 import { useHistorialResumenQuery } from './hooks/useHistorialResumenQuery';
-import PerifoneadorCombobox from './components/PerifoneadorCombobox';
+import SearchSelectCombobox from '../shared/components/ui/SearchSelectCombobox';
 import FiltroFechas from '../shared/components/ui/FiltroFechas';
 import TablaDatos from '../shared/components/ui/TablaDatos';
 import { formatearDuracion } from '../shared/utils/formato';
@@ -53,6 +54,19 @@ export const HistorialRecorridosPage: React.FC = () => {
     cargandoCatalogos,
   });
 
+  const opcionesSectorFiltro = useMemo(
+    () => [
+      { value: 'SIN_SECTOR', label: 'Sin sector asignado' },
+      ...listaSectores.map((s) => ({ value: s, label: s })),
+    ],
+    [listaSectores]
+  );
+  const opcionesGrupoFiltro = useMemo(
+    () => listaGrupos.map((g) => ({ value: String(g.id), label: g.name })),
+    [listaGrupos]
+  );
+  const opcionesBaseFiltro = useMemo(() => listaBases.map((b) => ({ value: b, label: b })), [listaBases]);
+
   // Filtrado final en memoria (checkbox de actividad)
   const itemsFiltrados = useMemo(() => {
     if (!filtros.soloConActividad) return itemsResumen;
@@ -73,11 +87,11 @@ export const HistorialRecorridosPage: React.FC = () => {
           const row = info.row.original;
           return (
             <div className="flex flex-col">
-              <span className="font-semibold text-zinc-900 dark:text-zinc-100 text-xs">
+              <span className="font-semibold text-zinc-900 dark:text-zinc-100 text-[13px]">
                 {row.dispositivoNombre}
               </span>
               {row.conductor && row.conductor !== row.dispositivoNombre && (
-                <span className="text-3xs text-zinc-400 dark:text-zinc-500 font-medium">
+                <span className="text-2xs text-zinc-400 dark:text-zinc-500 font-medium">
                   {row.conductor}
                 </span>
               )}
@@ -91,7 +105,7 @@ export const HistorialRecorridosPage: React.FC = () => {
         cell: (info) => {
           const val = info.getValue() as string;
           return (
-            <span className="font-mono text-zinc-600 dark:text-zinc-400 tabular-nums text-xs">
+            <span className="font-mono text-zinc-600 dark:text-zinc-400 tabular-nums text-[13px]">
               {val || '—'}
             </span>
           );
@@ -103,7 +117,7 @@ export const HistorialRecorridosPage: React.FC = () => {
         cell: (info) => {
           const val = Number((info.getValue() as number) || 0);
           return (
-            <span className="font-mono font-bold text-zinc-900 dark:text-zinc-100 tabular-nums text-xs">
+            <span className="font-mono font-bold text-zinc-900 dark:text-zinc-100 tabular-nums text-[13px]">
               {val.toFixed(1)} km
             </span>
           );
@@ -155,7 +169,7 @@ export const HistorialRecorridosPage: React.FC = () => {
         cell: (info) => {
           const val = info.getValue() as string | null;
           return (
-            <span className="font-mono text-zinc-600 dark:text-zinc-400 text-xs">{val || '—'}</span>
+            <span className="font-mono text-zinc-600 dark:text-zinc-400 text-[13px]">{val || '—'}</span>
           );
         },
       },
@@ -308,71 +322,65 @@ export const HistorialRecorridosPage: React.FC = () => {
         </div>
 
         {/* Barra de Filtros Apple UI */}
-        <div className="bg-white dark:bg-zinc-900 p-3.5 sm:p-4 rounded-[21px] shadow-xs border border-zinc-200/80 dark:border-zinc-800 flex flex-wrap gap-3 items-center">
+        <div className="bg-white dark:bg-zinc-900 p-3 sm:p-3.5 rounded-2xl shadow-xs border border-zinc-200/80 dark:border-zinc-800 flex flex-wrap gap-2.5 items-center">
           <FiltroFechas
             fechaInicio={filtros.fechaInicio}
             fechaFin={filtros.fechaFin}
             onCambio={(obj) => setFiltros({ fechaInicio: obj.desde, fechaFin: obj.hasta })}
           />
 
-          <PerifoneadorCombobox
-            dispositivos={dispositivos}
-            value={filtros.dispositivoFiltro}
-            onChange={(v) => setFiltros({ dispositivoFiltro: v })}
+          <div className="relative w-64 sm:w-72">
+            <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-zinc-400 pointer-events-none" />
+            <input
+              type="text"
+              value={filtros.dispositivoFiltro}
+              onChange={(e) => setFiltros({ dispositivoFiltro: e.target.value })}
+              placeholder="Buscar por nombre o DNI..."
+              className="w-full h-9 pl-9 pr-8 text-[13px] bg-white dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded-lg text-zinc-900 dark:text-zinc-100 placeholder-zinc-400 focus:outline-none focus:ring-2 focus:ring-[#155BD0]/20 focus:border-[#155BD0] transition-all"
+            />
+            {filtros.dispositivoFiltro && (
+              <button
+                type="button"
+                onClick={() => setFiltros({ dispositivoFiltro: '' })}
+                className="absolute right-2.5 top-1/2 -translate-y-1/2 text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-200 cursor-pointer"
+              >
+                <X size={13} />
+              </button>
+            )}
+          </div>
+
+          <SearchSelectCombobox
+            className="w-40"
+            options={opcionesSectorFiltro}
+            value={filtros.sectorFiltro}
+            onChange={(v) => setFiltros({ sectorFiltro: v })}
+            placeholder="Sector..."
+            emptyOptionLabel="Todos los sectores"
+            allowCustomValue={false}
           />
 
-          {/* Filtro por Sector / Geocerca */}
-          <div className="flex items-center gap-1.5 bg-zinc-50/80 dark:bg-zinc-900/60 p-2 sm:p-2.5 rounded-[21px] border border-zinc-200/80 dark:border-zinc-800/80">
-            <Filter size={13} className="text-[#155BD0] dark:text-blue-400" />
-            <select
-              value={filtros.sectorFiltro}
-              onChange={(e) => setFiltros({ sectorFiltro: e.target.value })}
-              className="bg-white dark:bg-zinc-800/90 border border-zinc-200 dark:border-zinc-700/80 rounded-xl px-2.5 py-1 text-xs font-medium text-zinc-900 dark:text-zinc-100 shadow-2xs focus:ring-2 focus:ring-[#155BD0]/20 focus:border-[#155BD0] cursor-pointer"
-            >
-              <option value="">Todos los sectores</option>
-              <option value="SIN_SECTOR">Sin sector asignado</option>
-              {listaSectores.map((sec) => (
-                <option key={sec} value={sec}>
-                  {sec}
-                </option>
-              ))}
-            </select>
-          </div>
+          <SearchSelectCombobox
+            className="w-36"
+            options={opcionesGrupoFiltro}
+            value={filtros.grupoFiltro}
+            onChange={(v) => setFiltros({ grupoFiltro: v })}
+            placeholder="Grupo..."
+            emptyOptionLabel="Todos los grupos"
+            allowCustomValue={false}
+          />
 
-          {/* Filtro por Grupo */}
-          <div className="flex items-center gap-1.5 bg-zinc-50/80 dark:bg-zinc-900/60 p-2 sm:p-2.5 rounded-[21px] border border-zinc-200/80 dark:border-zinc-800/80">
-            <select
-              value={filtros.grupoFiltro}
-              onChange={(e) => setFiltros({ grupoFiltro: e.target.value })}
-              className="bg-white dark:bg-zinc-800/90 border border-zinc-200 dark:border-zinc-700/80 rounded-xl px-2.5 py-1 text-xs font-medium text-zinc-900 dark:text-zinc-100 shadow-2xs focus:ring-2 focus:ring-[#155BD0]/20 focus:border-[#155BD0] cursor-pointer"
-            >
-              <option value="">Todos los grupos</option>
-              {listaGrupos.map((g) => (
-                <option key={g.id} value={g.id}>
-                  {g.name}
-                </option>
-              ))}
-            </select>
-          </div>
-
-          {/* Filtro por Base */}
-          <div className="flex items-center gap-1.5 bg-zinc-50/80 dark:bg-zinc-900/60 p-2 sm:p-2.5 rounded-[21px] border border-zinc-200/80 dark:border-zinc-800/80">
-            <select
-              value={filtros.baseFiltro}
-              onChange={(e) => setFiltros({ baseFiltro: e.target.value })}
-              className="bg-white dark:bg-zinc-800/90 border border-zinc-200 dark:border-zinc-700/80 rounded-xl px-2.5 py-1 text-xs font-medium text-zinc-900 dark:text-zinc-100 shadow-2xs focus:ring-2 focus:ring-[#155BD0]/20 focus:border-[#155BD0] cursor-pointer"
-            >
-              <option value="">Todas las bases</option>
-              {listaBases.map((b) => (
-                <option key={b} value={b}>
-                  {b}
-                </option>
-              ))}
-            </select>
-          </div>
+          <SearchSelectCombobox
+            className="w-36"
+            options={opcionesBaseFiltro}
+            value={filtros.baseFiltro}
+            onChange={(v) => setFiltros({ baseFiltro: v })}
+            placeholder="Base..."
+            emptyOptionLabel="Todas las bases"
+            allowCustomValue={false}
+          />
 
           {/* Checkbox para ocultar sin actividad */}
-          <label className="flex items-center gap-2 text-xs font-medium text-zinc-700 dark:text-zinc-300 ml-auto cursor-pointer select-none bg-zinc-50/80 dark:bg-zinc-900/60 px-3 py-2 rounded-[21px] border border-zinc-200/80 dark:border-zinc-800/80">
+          <label className="flex items-center gap-2 text-[12px] font-medium text-zinc-700 dark:text-zinc-300 ml-auto cursor-pointer select-none bg-zinc-50/80 dark:bg-zinc-900/60 px-3 h-9 rounded-lg border border-zinc-200/80 dark:border-zinc-800/80">
             <input
               type="checkbox"
               checked={filtros.soloConActividad}

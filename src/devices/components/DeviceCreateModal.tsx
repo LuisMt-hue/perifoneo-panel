@@ -98,26 +98,26 @@ export const DeviceCreateModal: React.FC<DeviceCreateModalProps> = ({
         if (e.target === e.currentTarget && !creando) onClose();
       }}
     >
-      <div className="bg-white dark:bg-zinc-900 rounded-2xl shadow-2xl w-full max-w-lg border border-zinc-200/80 dark:border-zinc-800 text-zinc-900 dark:text-zinc-100 transform transition-all animate-in fade-in zoom-in-95 duration-150 max-h-[90vh] flex flex-col overflow-hidden">
-        <div className="flex items-center justify-between px-6 py-4 border-b border-zinc-100 dark:border-zinc-800 bg-zinc-50/70 dark:bg-zinc-950/40 shrink-0">
+      <div className="w-full max-w-lg bg-white dark:bg-zinc-900 backdrop-blur-2xl border border-zinc-200/80 dark:border-zinc-800 rounded-2xl shadow-2xl p-6 overflow-hidden max-h-[90vh] flex flex-col">
+        <div className="flex items-center justify-between pb-4 border-b border-zinc-100 dark:border-zinc-800 shrink-0">
           <div className="flex items-center gap-2.5">
             <div className="w-7 h-7 rounded-xl bg-blue-600/10 text-[#155BD0] dark:text-blue-400 flex items-center justify-center">
               <Plus size={16} />
             </div>
-            <h3 className="text-[15px] font-semibold text-zinc-900 dark:text-zinc-100">Nuevo Perifoneador</h3>
+            <h2 className="text-[15px] font-semibold text-zinc-900 dark:text-zinc-100">Nuevo Perifoneador</h2>
           </div>
 
           <button
             type="button"
             disabled={creando}
             onClick={onClose}
-            className="w-8 h-8 rounded-xl flex items-center justify-center text-zinc-400 hover:text-zinc-700 dark:hover:text-zinc-200 hover:bg-zinc-200/50 dark:hover:bg-zinc-800 transition-colors cursor-pointer"
+            className="w-8 h-8 rounded-xl flex items-center justify-center text-zinc-400 hover:text-zinc-700 dark:hover:text-zinc-200 hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-colors cursor-pointer"
           >
             <X size={16} />
           </button>
         </div>
 
-        <form onSubmit={handleSubmit} className="flex-1 overflow-y-auto p-6 space-y-4">
+        <form onSubmit={handleSubmit} className="mt-4 space-y-4 overflow-y-auto flex-1 pr-1">
           {errorLocal && (
             <div className="p-3 rounded-xl bg-rose-50 dark:bg-rose-950/50 border border-rose-200 dark:border-rose-800 text-rose-700 dark:text-rose-300 text-[13px]">
               {errorLocal}
@@ -217,7 +217,7 @@ export const DeviceCreateModal: React.FC<DeviceCreateModalProps> = ({
             />
           </div>
 
-          <div className="flex items-center justify-end gap-2.5 pt-4 border-t border-zinc-100 dark:border-zinc-800">
+          <div className="flex items-center justify-end gap-2.5 pt-4 border-t border-zinc-100 dark:border-zinc-800 shrink-0">
             <button
               type="button"
               disabled={creando}
